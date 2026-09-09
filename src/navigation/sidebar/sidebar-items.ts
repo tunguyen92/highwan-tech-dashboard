@@ -1,5 +1,6 @@
 import {
   Banknote,
+  Building,
   Calendar,
   ChartBar,
   CheckSquare,
@@ -202,6 +203,18 @@ export const sidebarItems: NavGroup[] = [
           { id: "auth-login-v2", title: "Login v2", url: "/auth/v2/login", newTab: true },
           { id: "auth-register-v1", title: "Register v1", url: "/auth/v1/register", newTab: true },
           { id: "auth-register-v2", title: "Register v2", url: "/auth/v2/register", newTab: true },
+        ],
+      },
+      {
+        id: "warehouse",
+        title: "Warehouse",
+        icon: Building,
+        subItems: [
+          { id: "items", title: "Items", url: "/dashboard/warehouse/items" },
+          { id: "categories", title: "Categories", url: "/dashboard/warehouse/categories" },
+          { id: "partners", title: "Partners", url: "/dashboard/warehouse/partners" },
+          { id: "inventory", title: "Inventory", url: "/dashboard/warehouse/inventory" },
+          { id: "vouchers", title: "Vouchers", url: "/dashboard/warehouse/vouchers" },
         ],
       },
     ],
