@@ -1,6 +1,7 @@
 "use client";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Subscribe } from "@tanstack/react-table";
+import { cn } from "cn";
 import { MoreHorizontal } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { DataTableFeatures } from "@/lib/data-table-features";
-import { cn } from "@/lib/utils";
 
 import { statusMeta, type VoucherRow } from "./data";
 
