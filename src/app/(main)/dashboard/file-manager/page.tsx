@@ -44,13 +44,13 @@ export default async function Page({ searchParams }: PageProps) {
           <h2 className="font-medium text-lg">All files</h2>
           <ToggleGroup type="single" variant="outline" size="sm" spacing={0} value={activeView} aria-label="File view">
             <ToggleGroupItem value="grid" asChild>
-              <Link href="?view=grid" replace scroll={false}>
+              <Link href="?view=grid" prefetch={false} replace scroll={false}>
                 <Grid2X2 />
                 Grid View
               </Link>
             </ToggleGroupItem>
             <ToggleGroupItem value="list" asChild>
-              <Link href="?view=list" replace scroll={false}>
+              <Link href="?view=list" prefetch={false} replace scroll={false}>
                 <List />
                 List View
               </Link>

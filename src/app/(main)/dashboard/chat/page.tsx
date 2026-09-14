@@ -15,7 +15,7 @@ export default function Page() {
           </p>
         </div>
         <Button asChild variant="ghost" size="icon-sm">
-          <Link href="/chat" target="_blank" rel="noreferrer" aria-label="Open chat in new tab">
+          <Link href="/chat" prefetch={false} target="_blank" rel="noreferrer" aria-label="Open chat in new tab">
             <ExternalLink />
           </Link>
         </Button>
