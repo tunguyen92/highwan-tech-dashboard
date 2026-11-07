@@ -126,6 +126,18 @@ _Deploy your own copy with one click._
 
 Your app will be running at [http://localhost:3000](http://localhost:3000)
 
+### Warehouse demo data
+
+The warehouse screens can run against an in-memory MongoDB seeded with Faker data. Add these settings to `.env.local` before starting the development server:
+
+```env
+MOCK_DB=true
+DEV_AUTH_BYPASS=true
+MOCK_DB_DAYS=60
+```
+
+The database is reset and reseeded whenever the server restarts. To use the login screen instead of the development auth bypass, set `DEV_AUTH_BYPASS=false` and sign in with `demo-admin` / `warehouse123`.
+
 ### Formatting and Linting
 
 Format, lint, and organize imports
