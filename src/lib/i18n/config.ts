@@ -4,7 +4,7 @@ export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "vi";
 export const LOCALE_COOKIE = "wms_locale";
 
-export const LOCALE_LABELS: Record<Locale, string> = {
+export const LOCALE_LABEL: Record<Locale, string> = {
   en: "English",
   vi: "Tiếng Việt",
 };

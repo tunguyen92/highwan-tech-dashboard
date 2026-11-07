@@ -12,30 +12,32 @@ import { ThemeBootScript } from "@/scripts/theme-boot";
 import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
 
 import "./globals.css";
+import { I18nProvider } from "@/lib/i18n/provider";
+import { getLocale, getServerT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(APP_CONFIG.url),
-  applicationName: APP_CONFIG.name,
-  authors: [{ name: "Arham Khan", url: "https://github.com/arhamkhnz" }],
-  title: APP_CONFIG.meta.title,
-  description: APP_CONFIG.meta.description,
-  openGraph: {
-    type: "website",
-    siteName: APP_CONFIG.name,
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    creator: "@arhamkhnz",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    metadataBase: new URL(APP_CONFIG.url),
+    applicationName: APP_CONFIG.name,
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+    title: t(APP_CONFIG.meta.title),
+    description: t(APP_CONFIG.meta.description),
+    openGraph: {
+      title: t(APP_CONFIG.meta.title),
+      description: t(APP_CONFIG.meta.description),
+      locale: "vi_VN",
+    },
+  };
+}
+
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await getLocale();
   const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
     PREFERENCE_DEFAULTS;
   return (
     <html
-      lang="en"
+      lang={locale}
       data-theme-mode={theme_mode}
       data-theme-preset={theme_preset}
       data-content-layout={content_layout}
@@ -46,19 +48,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       suppressHydrationWarning
     >
       <head>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-JSJE619NQN" />
-        <script
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: static Google tag initialization supplied by the site owner
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-JSJE619NQN');
-            `,
-          }}
-        />
         {/* Applies theme and layout preferences on load to avoid flicker and unnecessary server rerenders. */}
         <ThemeBootScript />
       </head>
@@ -66,8 +55,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <QueryProvider>
           <TooltipProvider>
             <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
-              {children}
-              <Toaster />
+              <I18nProvider locale={locale}>
+                {children}
+                <Toaster />
+              </I18nProvider>
             </PreferencesStoreProvider>
           </TooltipProvider>
         </QueryProvider>

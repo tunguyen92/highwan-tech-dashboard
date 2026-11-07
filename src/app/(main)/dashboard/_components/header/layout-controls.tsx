@@ -9,11 +9,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { fontOptions } from "@/lib/fonts/registry";
+import { useT } from "@/lib/i18n/provider";
 import { PREFERENCE_REGISTRY } from "@/lib/preferences/preferences-config";
 import { THEME_PRESET_OPTIONS } from "@/lib/preferences/theme";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
 export function LayoutControls() {
+  const t = useT();
   const { values, resolvedThemeMode, setPreference, resetPreferences } = usePreferencesStore(
     useShallow((state) => ({
       values: state.values,
@@ -85,15 +87,15 @@ export function LayoutControls() {
       <PopoverContent align="end">
         <div className="flex flex-col gap-5">
           <div className="space-y-1.5">
-            <h4 className="text-sm leading-none font-medium">Preferences</h4>
-            <p className="text-muted-foreground text-xs">Customize your dashboard layout preferences.</p>
+            <h4 className="text-sm leading-none font-medium">{t("Preferences")}</h4>
+            <p className="text-muted-foreground text-xs">{t("Customize your dashboard layout preferences.")}</p>
           </div>
           <div className="space-y-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Theme Preset</Label>
+              <Label className="text-xs font-medium">{t("Theme Preset")}</Label>
               <Select value={themePreset} onValueChange={onThemePresetChange}>
                 <SelectTrigger size="sm" className="w-full text-xs">
-                  <SelectValue placeholder="Preset" />
+                  <SelectValue placeholder={t("Preset")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -114,10 +116,10 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Fonts</Label>
+              <Label className="text-xs font-medium">{t("Fonts")}</Label>
               <Select value={font} onValueChange={onFontChange}>
                 <SelectTrigger size="sm" className="w-full text-xs">
-                  <SelectValue placeholder="Select font" />
+                  <SelectValue placeholder={t("Select font")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -132,7 +134,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Theme Mode</Label>
+              <Label className="text-xs font-medium">{t("Theme Mode")}</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -141,20 +143,20 @@ export function LayoutControls() {
                 value={themeMode}
                 onValueChange={onThemeModeChange}
               >
-                <ToggleGroupItem value="light" aria-label="Toggle light">
+                <ToggleGroupItem value="light" aria-label={t("Light")}>
                   Light
                 </ToggleGroupItem>
-                <ToggleGroupItem value="dark" aria-label="Toggle dark">
+                <ToggleGroupItem value="dark" aria-label={t("Dark")}>
                   Dark
                 </ToggleGroupItem>
-                <ToggleGroupItem value="system" aria-label="Toggle system">
+                <ToggleGroupItem value="system" aria-label={t("Match system")}>
                   System
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Page Layout</Label>
+              <Label className="text-xs font-medium">{t("Page Layout")}</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -163,17 +165,17 @@ export function LayoutControls() {
                 value={contentLayout}
                 onValueChange={onContentLayoutChange}
               >
-                <ToggleGroupItem value="centered" aria-label="Toggle centered">
+                <ToggleGroupItem value="centered" aria-label={t("Centered")}>
                   Centered
                 </ToggleGroupItem>
-                <ToggleGroupItem value="full-width" aria-label="Toggle full-width">
+                <ToggleGroupItem value="full-width" aria-label={t("Full width")}>
                   Full Width
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Navbar Behavior</Label>
+              <Label className="text-xs font-medium">{t("Navbar behavior")}</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -182,17 +184,17 @@ export function LayoutControls() {
                 value={navbarStyle}
                 onValueChange={onNavbarStyleChange}
               >
-                <ToggleGroupItem value="sticky" aria-label="Toggle sticky">
+                <ToggleGroupItem value="sticky" aria-label={t("Sticky")}>
                   Sticky
                 </ToggleGroupItem>
-                <ToggleGroupItem value="scroll" aria-label="Toggle scroll">
+                <ToggleGroupItem value="scroll" aria-label={t("Scroll with page")}>
                   Scroll
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Sidebar Style</Label>
+              <Label className="text-xs font-medium">{t("Sidebar Style")}</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -201,20 +203,20 @@ export function LayoutControls() {
                 value={variant}
                 onValueChange={onSidebarStyleChange}
               >
-                <ToggleGroupItem value="inset" aria-label="Toggle inset">
+                <ToggleGroupItem value="inset" aria-label={t("Inset")}>
                   Inset
                 </ToggleGroupItem>
-                <ToggleGroupItem value="sidebar" aria-label="Toggle sidebar">
+                <ToggleGroupItem value="sidebar" aria-label={t("Sidebar")}>
                   Sidebar
                 </ToggleGroupItem>
-                <ToggleGroupItem value="floating" aria-label="Toggle floating">
+                <ToggleGroupItem value="floating" aria-label={t("Floating")}>
                   Floating
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Sidebar Collapse Mode</Label>
+              <Label className="text-xs font-medium">{t("Sidebar collapse mode")}</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -223,17 +225,17 @@ export function LayoutControls() {
                 value={collapsible}
                 onValueChange={onSidebarCollapseModeChange}
               >
-                <ToggleGroupItem value="icon" aria-label="Toggle icon">
+                <ToggleGroupItem value="icon" aria-label={t("Collapse to icons")}>
                   Icon
                 </ToggleGroupItem>
-                <ToggleGroupItem value="offcanvas" aria-label="Toggle offcanvas">
+                <ToggleGroupItem value="offcanvas" aria-label={t("Off-canvas")}>
                   OffCanvas
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             <Button type="button" size="sm" variant="outline" className="w-full text-xs" onClick={resetPreferences}>
-              Restore Defaults
+              {t("Restore defaults")}
             </Button>
           </div>
         </div>
