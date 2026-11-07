@@ -1,9 +1,13 @@
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Banknote,
+  Boxes,
   Building,
   Calendar,
   ChartBar,
   CheckSquare,
+  FileSpreadsheet,
   Fingerprint,
   FolderOpen,
   Forklift,
@@ -11,19 +15,27 @@ import {
   GraduationCap,
   HeartPulse,
   Kanban,
+  Layers,
   LayoutDashboard,
+  LayoutGrid,
   ListTodo,
   Lock,
   type LucideIcon,
   Mail,
   MessageSquare,
+  Package,
   ReceiptText,
+  Scale,
   Server,
   ShoppingBag,
   SquareArrowUpRight,
   UserRound,
   Users,
 } from "lucide-react";
+
+import type { TFunction } from "@/lib/i18n/translate";
+import type { Role } from "@/lib/wms/constants";
+import { can, type Permission } from "@/lib/wms/permissions";
 
 export type NavBadge = "new" | "soon";
 
@@ -35,6 +47,7 @@ export interface NavSubItem {
   badge?: NavBadge;
   disabled?: boolean;
   newTab?: boolean;
+  permission?: Permission; // if not specified, all roles can access
 }
 
 interface NavItemBase {
@@ -44,6 +57,7 @@ interface NavItemBase {
   badge?: NavBadge;
   disabled?: boolean;
   newTab?: boolean;
+  permission?: Permission;
 }
 
 export interface NavMainLinkItem extends NavItemBase {
@@ -66,6 +80,70 @@ export interface NavGroup {
 export const sidebarItems: NavGroup[] = [
   {
     id: 1,
+    label: "Warehouse",
+    items: [
+      {
+        id: "overview",
+        title: "Overview",
+        url: "/dashboard/overview",
+        icon: LayoutGrid,
+        permission: "overview:read",
+      },
+      { id: "stock", title: "Inventory", url: "/dashboard/stock", icon: Boxes },
+      {
+        id: "imports",
+        title: "Receipts",
+        url: "/dashboard/vouchers/import",
+        icon: ArrowDownToLine,
+        permission: "voucher:read",
+      },
+      {
+        id: "exports",
+        title: "Issues",
+        url: "/dashboard/vouchers/export",
+        icon: ArrowUpFromLine,
+        permission: "voucher:read",
+      },
+    ],
+  },
+  {
+    id: 2,
+    label: "Catalog",
+    items: [
+      { id: "items", title: "Items", url: "/dashboard/items", icon: Package, permission: "item:read" },
+      { id: "boms", title: "BOM (bill of materials)", url: "/dashboard/boms", icon: Layers, permission: "bom:read" },
+    ],
+  },
+  {
+    id: 3,
+    label: "Reports",
+    items: [
+      {
+        id: "movement",
+        title: "In - Out - Balance",
+        url: "/dashboard/reports/movement",
+        icon: FileSpreadsheet,
+        permission: "report:read",
+      },
+      {
+        id: "reconciliation",
+        title: "BOM reconciliation",
+        url: "/dashboard/reports/reconciliation",
+        icon: Scale,
+        permission: "report:read",
+      },
+    ],
+  },
+  {
+    id: 4,
+    label: "System",
+    items: [
+      { id: "wms-users", title: "Users", url: "/dashboard/admin/users", icon: Users, permission: "user:manage" },
+      { id: "wms-account", title: "Account", url: "/dashboard/account", icon: UserRound },
+    ],
+  },
+  {
+    id: 5,
     label: "Dashboards",
     items: [
       {
@@ -250,3 +328,27 @@ export const sidebarItems: NavGroup[] = [
     ],
   },
 ];
+
+/** Keeps only the groups and items the role is allowed to open. UI convenience only: the server re-checks. */
+export function filterNavByRole(groups: readonly NavGroup[], role: Role, t: TFunction): NavGroup[] {
+  const allowed = (permission?: Permission) => !permission || can(role, permission);
+  return groups
+    .map((group) => ({
+      ...group,
+      label: group.label ? t(group.label) : undefined,
+      items: group.items
+        .filter((item) => allowed(item.permission))
+        .map((item: NavMainItem) =>
+          item.subItems
+            ? {
+                ...item,
+                title: t(item.title),
+                subItems: item.subItems
+                  .filter((sub) => allowed(sub.permission))
+                  .map((sub) => ({ ...sub, title: t(sub.title) })),
+              }
+            : { ...item, title: t(item.title) },
+        ),
+    }))
+    .filter((group) => group.items.length > 0);
+}
