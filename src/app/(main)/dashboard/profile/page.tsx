@@ -1,4 +1,5 @@
 import { LockKeyhole } from "lucide-react";
+import type { Metadata } from "next";
 
 import {
   Breadcrumb,
@@ -18,6 +19,15 @@ import { ProfileOverview } from "./_components/profile-overview";
 import { PersonalDetails } from "./_components/profile-personal-details";
 import { ProfileStatusSidebar } from "./_components/profile-status-sidebar";
 import { TimeOffDetails } from "./_components/profile-time-off-details";
+
+export const metadata: Metadata = {
+  title: "Open Source Employee Profile Dashboard with shadcn/ui",
+  description:
+    "Explore an open source employee profile dashboard with personal details, employment information, time off, documents, and reporting lines.",
+  alternates: {
+    canonical: "/dashboard/profile",
+  },
+};
 
 export default function Page() {
   return (
@@ -48,7 +58,7 @@ export default function Page() {
       <ProfileHeader profile={profile} />
 
       <Tabs className="min-h-0 flex-1 gap-0" defaultValue="overview">
-        <div className="scrollbar-none touch-pan-x overflow-x-auto overscroll-x-contain border-y">
+        <div className="touch-pan-x scrollbar-none overflow-x-auto overscroll-x-contain border-y">
           <TabsList
             className="w-max min-w-full justify-start gap-4 px-4 *:data-[slot=tabs-trigger]:flex-none"
             variant="line"
@@ -85,10 +95,10 @@ export default function Page() {
 
           <TabsContent className="py-4" value="compensation">
             <div className="flex items-start gap-3">
-              <LockKeyhole aria-hidden="true" className="size-4 text-muted-foreground" />
+              <LockKeyhole aria-hidden="true" className="text-muted-foreground size-4" />
               <div>
-                <p className="font-medium text-sm">Restricted information</p>
-                <p className="mt-0.5 text-muted-foreground text-sm">
+                <p className="text-sm font-medium">Restricted information</p>
+                <p className="text-muted-foreground mt-0.5 text-sm">
                   Visible to people administrators and authorized finance roles.
                 </p>
               </div>

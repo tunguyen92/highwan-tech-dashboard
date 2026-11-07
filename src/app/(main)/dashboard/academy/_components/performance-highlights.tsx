@@ -6,6 +6,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const performanceHighlights = [
   {
@@ -14,7 +15,11 @@ const performanceHighlights = [
     duration: 1.45,
     subject: "Pure Math",
     score: 84,
-    avatars: ["AM", "LS", "NK"],
+    students: [
+      { initials: "OD", name: "Olivia Davis", achievement: "Top Performer", score: 96 },
+      { initials: "EM", name: "Ethan Miller", achievement: "Problem-Solving Excellence", score: 91 },
+      { initials: "SW", name: "Sophia Wilson", achievement: "Most Improved", score: 88 },
+    ],
   },
   {
     className: "G11B",
@@ -22,7 +27,7 @@ const performanceHighlights = [
     duration: 1.75,
     subject: "Literature",
     score: 78,
-    avatars: ["IR"],
+    students: [{ initials: "IA", name: "Isabella Anderson", achievement: "Critical Analysis Award", score: 93 }],
   },
   {
     className: "G11C",
@@ -30,7 +35,11 @@ const performanceHighlights = [
     duration: 1.9,
     subject: "Physics",
     score: 80,
-    avatars: ["SK", "MJ", "AT"],
+    students: [
+      { initials: "AB", name: "Alexander Brown", achievement: "Top Performer", score: 95 },
+      { initials: "MG", name: "Mia Garcia", achievement: "Laboratory Excellence", score: 92 },
+      { initials: "NM", name: "Noah Martinez", achievement: "Most Improved", score: 87 },
+    ],
   },
   {
     className: "G11D",
@@ -38,7 +47,10 @@ const performanceHighlights = [
     duration: 1.66,
     subject: "History",
     score: 73,
-    avatars: ["RP", "EH"],
+    students: [
+      { initials: "ET", name: "Emma Taylor", achievement: "Research Excellence", score: 90 },
+      { initials: "WJ", name: "William Johnson", achievement: "Consistent Performer", score: 86 },
+    ],
   },
 ];
 
@@ -75,7 +87,7 @@ function PerformanceHighlightBar({
   const avatarSize = 22;
   const avatarStart = x + 8;
   const avatarY = barY + (barHeight - avatarSize) / 2 - 1.5;
-  const labelX = avatarStart + payload.avatars.length * 14 + 14;
+  const labelX = avatarStart + payload.students.length * 14 + 14;
 
   return (
     <g>
@@ -89,14 +101,40 @@ function PerformanceHighlightBar({
       />
       <rect fill="var(--color-duration)" height={barHeight} rx={radius} width={fillWidth} x={x} y={barY} />
 
-      {payload.avatars.map((initials, index) => {
+      {payload.students.map((student, index) => {
         const avatarX = avatarStart + index * 14;
 
         return (
-          <foreignObject height={avatarSize + 4} key={initials} width={avatarSize + 4} x={avatarX - 2} y={avatarY}>
-            <Avatar className="size-5 bg-muted" size="sm">
-              <AvatarFallback className="text-foreground">{initials}</AvatarFallback>
-            </Avatar>
+          <foreignObject
+            height={avatarSize + 4}
+            key={student.initials}
+            overflow="visible"
+            width={avatarSize + 4}
+            x={avatarX - 2}
+            y={avatarY}
+          >
+            <Tooltip>
+              <TooltipTrigger
+                aria-label={student.name}
+                className="focus-visible:ring-ring flex size-5 rounded-full outline-none focus-visible:ring-2"
+                type="button"
+              >
+                <Avatar className="bg-muted size-5" size="sm">
+                  <AvatarFallback className="text-foreground">{student.initials}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={8}>
+                <div className="grid gap-1">
+                  <p>{student.name}</p>
+                  <p>
+                    {student.achievement} · {student.score}%
+                  </p>
+                  <p>
+                    {payload.className} · {payload.subject}
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           </foreignObject>
         );
       })}
@@ -105,7 +143,7 @@ function PerformanceHighlightBar({
         dominantBaseline="middle"
         x={labelX}
         y={barY + barHeight / 2 + 0.5}
-        className="fill-primary-foreground font-medium text-xs"
+        className="fill-primary-foreground text-xs font-medium"
       >
         {payload.subject}
       </text>
@@ -130,7 +168,7 @@ export function PerformanceHighlights() {
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="text-sm">Performance Highlights</CardTitle>
-        <CardAction className="flex items-center gap-1 text-muted-foreground text-xs">
+        <CardAction className="text-muted-foreground flex items-center gap-1 text-xs">
           View Insights <ArrowRight className="size-4" />
         </CardAction>
       </CardHeader>

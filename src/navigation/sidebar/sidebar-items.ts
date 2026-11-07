@@ -2,11 +2,13 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Banknote,
+  Bitcoin,
   Boxes,
   Building,
   Calendar,
   ChartBar,
   CheckSquare,
+  ContactRound,
   FileSpreadsheet,
   Fingerprint,
   FolderOpen,
@@ -14,6 +16,7 @@ import {
   Gauge,
   GraduationCap,
   HeartPulse,
+  Hotel,
   Kanban,
   Layers,
   LayoutDashboard,
@@ -26,18 +29,21 @@ import {
   Package,
   ReceiptText,
   Scale,
+  ScanBarcode,
   Server,
   ShoppingBag,
   SquareArrowUpRight,
+  Stethoscope,
   UserRound,
   Users,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import type { TFunction } from "@/lib/i18n/translate";
 import type { Role } from "@/lib/wms/constants";
 import { can, type Permission } from "@/lib/wms/permissions";
 
-export type NavBadge = "new" | "soon";
+export type NavBadge = "new" | "updated" | "soon";
 
 export interface NavSubItem {
   id: string;
@@ -212,12 +218,67 @@ export const sidebarItems: NavGroup[] = [
         url: "/dashboard/patient-monitoring",
         icon: HeartPulse,
       },
+      {
+        id: "crypto",
+        title: "Crypto",
+        url: "/dashboard/coming-soon",
+        icon: Bitcoin,
+        badge: "soon",
+        disabled: true,
+      },
+      {
+        id: "healthcare",
+        title: "Healthcare",
+        url: "/dashboard/coming-soon",
+        icon: Stethoscope,
+        badge: "soon",
+        disabled: true,
+      },
+      {
+        id: "pos",
+        title: "POS",
+        url: "/dashboard/coming-soon",
+        icon: ScanBarcode,
+        badge: "soon",
+        disabled: true,
+      },
+      {
+        id: "hr",
+        title: "HR",
+        url: "/dashboard/coming-soon",
+        icon: ContactRound,
+        badge: "soon",
+        disabled: true,
+      },
+      {
+        id: "restaurant",
+        title: "Restaurant",
+        url: "/dashboard/coming-soon",
+        icon: UtensilsCrossed,
+        badge: "soon",
+        disabled: true,
+      },
+      {
+        id: "hotel",
+        title: "Hotel",
+        url: "/dashboard/coming-soon",
+        icon: Hotel,
+        badge: "soon",
+        disabled: true,
+      },
     ],
   },
   {
-    id: 2,
+    id: 6,
     label: "Pages",
     items: [
+      {
+        id: "products",
+        title: "Products",
+        url: "/dashboard/products",
+        icon: Package,
+        badge: "new",
+      },
       {
         id: "email",
         title: "Email",
@@ -241,6 +302,7 @@ export const sidebarItems: NavGroup[] = [
         title: "Kanban",
         url: "/dashboard/kanban",
         icon: Kanban,
+        badge: "updated",
       },
       {
         id: "tasks",
@@ -298,7 +360,7 @@ export const sidebarItems: NavGroup[] = [
     ],
   },
   {
-    id: 3,
+    id: 7,
     label: "Legacy",
     items: [
       {
@@ -314,7 +376,7 @@ export const sidebarItems: NavGroup[] = [
     ],
   },
   {
-    id: 4,
+    id: 8,
     label: "Misc",
     items: [
       {
