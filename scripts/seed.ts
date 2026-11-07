@@ -140,7 +140,13 @@ async function seed() {
   const start = new Date(today.getTime() - (days - 1) * DAY_MS);
   const bomFor = new Map<string, { item: IItem; quantity: Decimal }[]>();
   const createBom = async (item: IItem, version: number, status: (typeof BOM_STATUS)[keyof typeof BOM_STATUS]) => {
-    const components = faker.helpers.arrayElements(materials, faker.number.int({ min: 3, max: 6 }));
+    const components =
+      item.type === ITEM_TYPE.SEMI
+        ? faker.helpers.arrayElements(materials, faker.number.int({ min: 3, max: 6 }))
+        : [
+            ...faker.helpers.arrayElements(semiFinished, faker.number.int({ min: 1, max: 2 })),
+            ...faker.helpers.arrayElements(materials, faker.number.int({ min: 2, max: 4 })),
+          ];
     const componentLines = components.map((component) => ({
       item: component,
       quantity: new Decimal(numberString(faker.number.float({ min: 1, max: 12, fractionDigits: 2 }), 2)),
@@ -170,6 +176,27 @@ async function seed() {
   }
   await createBom(products[0], 2, BOM_STATUS.DRAFT);
   await createBom(products[1], 2, BOM_STATUS.ARCHIVED);
+
+  const getMaterialNeeds = (itemId: string, quantity: Decimal) => {
+    const needs = new Map<string, { item: IItem; quantity: Decimal }>();
+    const expand = (outputItemId: string, multiplier: Decimal, path: string[]) => {
+      if (path.includes(outputItemId)) throw new Error("BOM_CIRCULAR_REFERENCE");
+      const components = bomFor.get(outputItemId);
+      if (!components) throw new Error(`BOM_NOT_FOUND:${outputItemId}`);
+      for (const { item, quantity: perOutput } of components) {
+        const required = multiplier.mul(perOutput);
+        if (item.type === ITEM_TYPE.SEMI) {
+          expand(String(item._id), required, [...path, outputItemId]);
+        } else {
+          const current = needs.get(String(item._id)) ?? { item, quantity: new Decimal(0) };
+          current.quantity = current.quantity.plus(required);
+          needs.set(String(item._id), current);
+        }
+      }
+    };
+    expand(itemId, quantity, []);
+    return [...needs.values()];
+  };
 
   const postVoucher = async (
     type: (typeof VOUCHER_TYPE)[keyof typeof VOUCHER_TYPE],
@@ -247,18 +274,19 @@ async function seed() {
     if (offset % 2 === 0 || faker.helpers.maybe(() => true, { probability: 0.1 })) {
       const product = faker.helpers.arrayElement(products);
       const productionQuantity = faker.number.int({ min: 2, max: 5 });
-      const components = bomFor.get(String(product._id))!;
-      const exportLines = components.map(({ item, quantity: quantityPerProduct }) => {
-        const norm = quantityPerProduct.mul(productionQuantity);
-        const issue = faker.helpers.maybe(() => norm.mul(faker.number.float({ min: 1.03, max: 1.16 })), {
-          probability: 0.2,
-        });
-        return {
-          item,
-          quantity: numberString(issue ?? norm, item.decimalPlaces),
-          normQuantity: norm.toString(),
-        };
-      });
+      const exportLines = getMaterialNeeds(String(product._id), new Decimal(productionQuantity)).map(
+        ({ item, quantity }) => {
+          const norm = quantity;
+          const issue = faker.helpers.maybe(() => norm.mul(faker.number.float({ min: 1.03, max: 1.16 })), {
+            probability: 0.2,
+          });
+          return {
+            item,
+            quantity: numberString(issue ?? norm, item.decimalPlaces),
+            normQuantity: norm.toString(),
+          };
+        },
+      );
       await postVoucher(VOUCHER_TYPE.EXPORT_PRODUCTION, voucherDate, exportLines, {
         batchNote: `Production ${faker.string.alphanumeric({ length: 6 }).toUpperCase()}`,
         productionRef: { productId: String(product._id), quantity: String(productionQuantity) },

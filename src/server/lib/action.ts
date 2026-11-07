@@ -5,6 +5,7 @@ import type { Permission } from "@/lib/wms/permissions";
 
 import { requirePermission, type SessionUser } from "./auth";
 import { connectDB } from "./db";
+import { isWarehouseDemoMode } from "./demo-mode";
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; code: string; message: string };
 
@@ -19,6 +20,7 @@ const MESSAGES: Record<string, string> = {
   INSUFFICIENT_STOCK: "Not enough stock",
   INSUFFICIENT_STOCK_FOR_CANCEL:
     "Cannot cancel because there is not enough stock now (the goods were already issued). Cancel the related issue voucher first.",
+  DEMO_READ_ONLY: "The production demo is read-only.",
   VOUCHER_NOT_DRAFT: "The voucher is no longer a draft.",
   VOUCHER_NOT_CONFIRMED: "Only confirmed vouchers can be cancelled.",
   VOUCHER_NOT_EDITABLE: "Only draft vouchers can be edited or deleted.",
@@ -89,8 +91,17 @@ async function fail(e: any): Promise<ActionResult<never>> {
 }
 
 /** Runs an authorized action: connect, check permission, execute, serialize, map errors */
-export async function run<T>(permission: Permission, fn: (user: SessionUser) => Promise<T>): Promise<ActionResult<T>> {
+export async function run<T>(
+  permission: Permission,
+  fn: (user: SessionUser) => Promise<T>,
+  demoFn?: (user: SessionUser) => Promise<T> | T,
+): Promise<ActionResult<T>> {
   try {
+    if (isWarehouseDemoMode()) {
+      if (!demoFn) throw new Error("DEMO_READ_ONLY");
+      const user = await requirePermission(permission);
+      return { ok: true, data: toPlain(await demoFn(user)) };
+    }
     await connectDB();
     const user = await requirePermission(permission);
     return { ok: true, data: toPlain(await fn(user)) };
@@ -100,8 +111,12 @@ export async function run<T>(permission: Permission, fn: (user: SessionUser) => 
 }
 
 /** Same as run, for actions that need no session (login) */
-export async function runPublic<T>(fn: () => Promise<T>): Promise<ActionResult<T>> {
+export async function runPublic<T>(fn: () => Promise<T>, demoFn?: () => Promise<T> | T): Promise<ActionResult<T>> {
   try {
+    if (isWarehouseDemoMode()) {
+      if (!demoFn) throw new Error("DEMO_READ_ONLY");
+      return { ok: true, data: toPlain(await demoFn()) };
+    }
     await connectDB();
     return { ok: true, data: toPlain(await fn()) };
   } catch (e) {

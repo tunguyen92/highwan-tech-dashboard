@@ -3,10 +3,15 @@
 import { run } from "@/server/lib/action";
 import { hashPassword } from "@/server/lib/auth";
 import { createUserSchema, objectId, password, updateUserSchema } from "@/server/lib/schemas";
+import { getDemoUsers } from "@/server/lib/warehouse-demo";
 import { ROLE, User } from "@/server/models/user";
 
 export async function listUsersAction() {
-  return run("user:manage", async () => User.find().sort({ username: 1 }).lean());
+  return run(
+    "user:manage",
+    async () => User.find().sort({ username: 1 }).lean(),
+    () => getDemoUsers(),
+  );
 }
 
 export async function createUserAction(input: unknown) {

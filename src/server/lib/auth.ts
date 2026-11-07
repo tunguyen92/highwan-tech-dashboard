@@ -7,6 +7,7 @@ import { can, type Permission } from "@/lib/wms/permissions";
 import { ROLE, type Role, User } from "@/server/models/user";
 
 import { connectDB } from "./db";
+import { isWarehouseDemoMode } from "./demo-mode";
 
 const COOKIE = "session";
 const SESSION_HOURS = 12;
@@ -15,7 +16,7 @@ const LOCK_MINUTES = 15;
 // Compared against when the username does not exist, so response time does not reveal valid usernames
 const DUMMY_HASH = bcrypt.hashSync("dummy-password", 10);
 
-export type SessionUser = { id: string; username: string; name: string; role: Role };
+export type SessionUser = { id: string; username: string; name: string; role: Role; demo?: boolean };
 
 const secret = () => {
   const s = process.env.AUTH_SECRET;
@@ -48,6 +49,16 @@ export async function destroySession() {
 
 /** Reads the cookie, then re-checks the user in the DB so deactivation / role changes apply immediately */
 export async function getCurrentUser(): Promise<SessionUser | null> {
+  if (isWarehouseDemoMode()) {
+    return {
+      id: "000000000000000000000001",
+      username: "demo-admin",
+      name: "Warehouse Demo",
+      role: ROLE.ADMIN,
+      demo: true,
+    };
+  }
+
   // Local development only: DEV_AUTH_BYPASS=true skips login and acts as a fixed administrator.
   if (process.env.NODE_ENV === "development" && process.env.DEV_AUTH_BYPASS === "true") {
     return { id: "000000000000000000000001", username: "dev-admin", name: "Dev Admin", role: ROLE.ADMIN };

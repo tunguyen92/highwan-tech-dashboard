@@ -15,15 +15,19 @@ export async function loginAction(input: unknown) {
 }
 
 export async function logoutAction() {
-  return runPublic(async () => {
+  const logout = async () => {
     await destroySession();
     return null;
-  });
+  };
+  return runPublic(logout, logout);
 }
 
 /** Current session user, for the UI to decide which menus to show (the server still checks every action) */
 export async function meAction() {
-  return runPublic(async () => getCurrentUser());
+  return runPublic(
+    async () => getCurrentUser(),
+    async () => getCurrentUser(),
+  );
 }
 
 export async function changeOwnPasswordAction(input: unknown) {

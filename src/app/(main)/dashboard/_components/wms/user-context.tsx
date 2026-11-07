@@ -5,7 +5,7 @@ import { createContext, type ReactNode, useContext } from "react";
 import type { Role } from "@/lib/wms/constants";
 import { can, type Permission } from "@/lib/wms/permissions";
 
-export type WmsUser = { id: string; username: string; name: string; role: Role };
+export type WmsUser = { id: string; username: string; name: string; role: Role; demo?: boolean };
 
 const UserContext = createContext<WmsUser | null>(null);
 
@@ -21,5 +21,7 @@ export function useWmsUser(): WmsUser {
 }
 
 export function useCan(permission: Permission): boolean {
-  return can(useWmsUser().role, permission);
+  const user = useWmsUser();
+  if (user.demo && permission !== "overview:read" && !permission.endsWith(":read")) return false;
+  return can(user.role, permission);
 }

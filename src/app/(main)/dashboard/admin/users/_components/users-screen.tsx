@@ -23,7 +23,7 @@ import { listUsersAction } from "@/server/actions/users";
 
 import { PageCard, tableClass } from "../../../_components/wms/page-card";
 import { EmptyRow, LoadingRows } from "../../../_components/wms/table-states";
-import { useWmsUser } from "../../../_components/wms/user-context";
+import { useCan, useWmsUser } from "../../../_components/wms/user-context";
 import { CreateUserDialog, EditUserDialog, ResetPasswordDialog } from "./user-dialogs";
 
 type DialogState = { kind: "create" } | { kind: "edit"; user: UserDTO } | { kind: "reset"; user: UserDTO } | null;
@@ -31,6 +31,7 @@ type DialogState = { kind: "create" } | { kind: "edit"; user: UserDTO } | { kind
 export function UsersScreen() {
   const t = useT();
   const me = useWmsUser();
+  const canManage = useCan("user:manage");
   const [dialog, setDialog] = useState<DialogState>(null);
   const { data, loading, reload } = useLoad(() => unwrapAs<UserDTO[]>(listUsersAction()), []);
   const rows = data ?? [];
@@ -43,9 +44,11 @@ export function UsersScreen() {
           "Manage accounts and roles. Administrator: full access. Manager: catalog, BOMs, vouchers, cancelling vouchers. Storekeeper: create and confirm vouchers. Viewer: read only.",
         )}
         actions={
-          <Button size="sm" onClick={() => setDialog({ kind: "create" })}>
-            <Plus /> {t("Add user")}
-          </Button>
+          canManage ? (
+            <Button size="sm" onClick={() => setDialog({ kind: "create" })}>
+              <Plus /> {t("Add user")}
+            </Button>
+          ) : null
         }
       >
         <Table className={tableClass}>
@@ -84,21 +87,23 @@ export function UsersScreen() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDateTime(user.lastLoginAt)}</TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" aria-label={t("Actions")}>
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setDialog({ kind: "edit", user })}>
-                          {t("Edit role / status")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setDialog({ kind: "reset", user })}>
-                          {t("Reset password")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {canManage ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-sm" aria-label={t("Actions")}>
+                            <MoreHorizontal />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setDialog({ kind: "edit", user })}>
+                            {t("Edit role / status")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setDialog({ kind: "reset", user })}>
+                            {t("Reset password")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))}
@@ -106,7 +111,7 @@ export function UsersScreen() {
         </Table>
       </PageCard>
 
-      {dialog?.kind === "create" ? (
+      {canManage && dialog?.kind === "create" ? (
         <CreateUserDialog
           onClose={() => setDialog(null)}
           onSaved={() => {
@@ -115,7 +120,7 @@ export function UsersScreen() {
           }}
         />
       ) : null}
-      {dialog?.kind === "edit" ? (
+      {canManage && dialog?.kind === "edit" ? (
         <EditUserDialog
           key={dialog.user._id}
           user={dialog.user}
@@ -126,7 +131,7 @@ export function UsersScreen() {
           }}
         />
       ) : null}
-      {dialog?.kind === "reset" ? (
+      {canManage && dialog?.kind === "reset" ? (
         <ResetPasswordDialog key={dialog.user._id} user={dialog.user} onClose={() => setDialog(null)} />
       ) : null}
     </>

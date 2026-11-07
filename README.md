@@ -128,7 +128,7 @@ Your app will be running at [http://localhost:3000](http://localhost:3000)
 
 ### Warehouse demo data
 
-The warehouse screens can run against an in-memory MongoDB seeded with Faker data. Add these settings to `.env.local` before starting the development server:
+In development, the read-only Faker fixture is enabled automatically when `MONGODB_URI` and `MOCK_DB` are unset. Set `WMS_DEMO_MODE=true` to enable it explicitly. To use the writable in-memory MongoDB instead, add these settings to `.env.local`:
 
 ```env
 MOCK_DB=true
@@ -137,6 +137,10 @@ MOCK_DB_DAYS=60
 ```
 
 The database is reset and reseeded whenever the server restarts. To use the login screen instead of the development auth bypass, set `DEV_AUTH_BYPASS=false` and sign in with `demo-admin` / `warehouse123`.
+
+### Production warehouse showcase
+
+For a database-free, read-only production demo, set `WMS_DEMO_MODE=true` in the deployment environment. This serves Faker-generated fixtures across the warehouse screens without connecting to MongoDB; all write actions are rejected. The demo exposes a public read-only administrator, so enable this only on a demo deployment, never on a deployment containing real user data. The fixture is regenerated during `npm run dev`, `npm run build`, and `npm run deploy`.
 
 ### Formatting and Linting
 
