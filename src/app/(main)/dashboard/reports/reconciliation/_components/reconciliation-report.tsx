@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import { Download } from "lucide-react";
 
+import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useT } from "@/lib/i18n/provider";
@@ -97,12 +97,7 @@ export function ReconciliationReport() {
       <div className="flex flex-wrap items-end gap-3 px-4">
         <Field className="w-44">
           <FieldLabel htmlFor="rc-period">{t("Month")}</FieldLabel>
-          <Input
-            id="rc-period"
-            type="month"
-            value={period}
-            onChange={(e) => e.target.value && setPeriod(e.target.value)}
-          />
+          <CalendarDatePicker id="rc-period" type="month" value={period} onChange={setPeriod} />
         </Field>
         <Field className="w-44">
           <FieldLabel htmlFor="rc-tol">{t("General tolerance (%)")}</FieldLabel>

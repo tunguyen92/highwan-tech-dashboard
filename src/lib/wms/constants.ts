@@ -6,10 +6,12 @@ export const ITEM_TYPE = {
 export type ItemType = (typeof ITEM_TYPE)[keyof typeof ITEM_TYPE];
 
 export const ITEM_TYPE_LABEL: Record<ItemType, string> = {
-  MATERIAL: "Raw Material",
+  MATERIAL: "Raw material",
   SEMI: "Semi-finished",
   PRODUCT: "Finished product",
 };
+
+export const QTY_MAX_DECIMAL_PLACES = 10;
 
 export const BOM_STATUS = {
   DRAFT: "DRAFT",

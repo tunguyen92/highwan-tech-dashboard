@@ -6,6 +6,7 @@ import Decimal from "decimal.js";
 import { Calculator, CircleCheck, ClipboardPaste, Plus, Save, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
+import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -300,13 +301,7 @@ export function VoucherSheet({
               </Field>
               <Field>
                 <FieldLabel htmlFor="v-date">{t("Voucher date")}</FieldLabel>
-                <Input
-                  id="v-date"
-                  type="date"
-                  value={date}
-                  disabled={!editable}
-                  onChange={(e) => setDate(e.target.value)}
-                />
+                <CalendarDatePicker id="v-date" value={date} onChange={setDate} disabled={!editable} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="v-batch">{t("Batch reference (optional)")}</FieldLabel>

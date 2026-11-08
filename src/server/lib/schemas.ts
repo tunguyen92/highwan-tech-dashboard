@@ -1,16 +1,18 @@
 import { z } from "zod";
 
-import { BOM_STATUS, ITEM_TYPE, ROLE, VOUCHER_STATUS, VOUCHER_TYPE } from "@/lib/wms/constants";
+import { BOM_STATUS, ITEM_TYPE, QTY_MAX_DECIMAL_PLACES, ROLE, VOUCHER_STATUS, VOUCHER_TYPE } from "@/lib/wms/constants";
 
 // Note: files marked "use server" may only export async functions, so schemas live here.
 const enumOf = <T extends Record<string, string>>(o: T) => z.enum(Object.values(o) as [T[keyof T], ...T[keyof T][]]);
+const quantitySchema = (maxDecimalPlaces: number) =>
+  z
+    .union([z.string(), z.number()])
+    .transform(String)
+    .pipe(z.string().regex(new RegExp(`^\\d+(\\.\\d{1,${maxDecimalPlaces}})?$`), "Invalid quantity"));
 
 export const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid id");
-/** Quantities travel as strings to avoid float errors. Up to 6 decimals. */
-export const qty = z
-  .union([z.string(), z.number()])
-  .transform(String)
-  .pipe(z.string().regex(/^\d+(\.\d{1,6})?$/, "Invalid quantity"));
+/** Quantities travel as strings to avoid float errors. Up to 10 decimals. */
+export const qty = quantitySchema(QTY_MAX_DECIMAL_PLACES);
 export const password = z.string().min(8, "At least 8 characters").max(72); // 72 = bcrypt input limit
 const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 export const periodStr = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Use YYYY-MM");
@@ -34,10 +36,11 @@ export const updateUserSchema = z.object({ role: enumOf(ROLE).optional(), isActi
 export const itemCreateSchema = z.object({
   code: z.string().trim().min(1).max(50),
   name: z.string().trim().min(1).max(200),
+  spec: z.string().trim().max(100).optional(),
+  productionLine: z.string().trim().max(100).optional(),
   type: enumOf(ITEM_TYPE),
   unit: z.string().trim().min(1).max(20),
-  decimalPlaces: z.number().int().min(0).max(6).default(0),
-  group: z.string().trim().max(100).optional(),
+  decimalPlaces: z.number().int().min(0).max(QTY_MAX_DECIMAL_PLACES).default(0),
   minStock: qty.default("0"),
   excludeFromReconciliation: z.boolean().default(false),
   packSize: z.string().trim().max(100).optional(),
@@ -48,6 +51,10 @@ export const itemFilterSchema = z.object({
   type: enumOf(ITEM_TYPE).optional(),
   q: z.string().trim().max(100).optional(),
   includeInactive: z.boolean().default(false),
+});
+export const itemPageFilterSchema = itemFilterSchema.extend({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const bomLinesSchema = z
@@ -91,6 +98,11 @@ export const voucherFilterSchema = z.object({
 });
 
 export const bomFilterSchema = z.object({ outputItemId: objectId.optional(), status: enumOf(BOM_STATUS).optional() });
+export const bomPageFilterSchema = bomFilterSchema.extend({
+  q: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
 
 export const stockSummarySchema = z.object({ from: ymd, to: ymd, type: z.enum(["MATERIAL", "PRODUCT"]).optional() });
 export const reconciliationSchema = z.object({
@@ -102,5 +114,9 @@ export const currentStockSchema = z.object({
   type: z.enum(["MATERIAL", "PRODUCT"]).optional(),
   lowOnly: z.boolean().default(false),
   q: z.string().trim().max(100).optional(),
+});
+export const currentStockPageSchema = currentStockSchema.extend({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 export const stockCardSchema = z.object({ itemId: objectId, from: ymd, to: ymd });

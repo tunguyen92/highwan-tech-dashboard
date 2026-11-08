@@ -28,6 +28,7 @@ import { createItemAction, updateItemAction } from "@/server/actions/items";
 import { QtyInput } from "../../_components/wms/qty-input";
 
 const blankToUndefined = (value: string) => (value.trim() === "" ? undefined : value.trim());
+const ITEM_UNITS = ["BOTTLE", "BOX", "EA", "KG", "M", "PRODUCT", "ROLL", "SET", "TIN"];
 
 /** Create / edit one item. Mounted with a `key`, so its state always starts from the given item. */
 export function ItemFormDialog({
@@ -42,10 +43,11 @@ export function ItemFormDialog({
   const t = useT();
   const [code, setCode] = useState(item?.code ?? "");
   const [name, setName] = useState(item?.name ?? "");
+  const [spec, setSpec] = useState(item?.spec ?? "");
+  const [productionLine, setProductionLine] = useState(item?.productionLine ?? "");
   const [type, setType] = useState<ItemType>(item?.type ?? "MATERIAL");
   const [unit, setUnit] = useState(item?.unit ?? "");
   const [decimalPlaces, setDecimalPlaces] = useState(String(item?.decimalPlaces ?? 0));
-  const [group, setGroup] = useState(item?.group ?? "");
   const [minStock, setMinStock] = useState(item?.minStock ?? "0");
   const [exclude, setExclude] = useState(item?.excludeFromReconciliation ?? false);
   const [packSize, setPackSize] = useState(item?.packSize ?? "");
@@ -59,10 +61,11 @@ export function ItemFormDialog({
     const payload = {
       code: code.trim(),
       name: name.trim(),
+      spec: blankToUndefined(spec),
+      productionLine: blankToUndefined(productionLine),
       type,
       unit: unit.trim(),
       decimalPlaces: Number(decimalPlaces),
-      group: blankToUndefined(group),
       minStock: minStock === "" ? "0" : minStock,
       excludeFromReconciliation: exclude,
       packSize: blankToUndefined(packSize),
@@ -119,10 +122,38 @@ export function ItemFormDialog({
             <Input id="item-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
           </Field>
 
+          <Field>
+            <FieldLabel htmlFor="item-spec">{t("Spec")}</FieldLabel>
+            <Input id="item-spec" value={spec} onChange={(e) => setSpec(e.target.value)} maxLength={100} />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="item-production-line">{t("Production line")}</FieldLabel>
+            <Input
+              id="item-production-line"
+              value={productionLine}
+              onChange={(e) => setProductionLine(e.target.value)}
+              maxLength={100}
+            />
+          </Field>
+
           <div className="grid gap-4 sm:grid-cols-3">
             <Field>
               <FieldLabel htmlFor="item-unit">{t("Unit of measure *")}</FieldLabel>
-              <Input id="item-unit" value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={20} />
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger id="item-unit" className="w-full">
+                  <SelectValue placeholder={t("Select unit")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {ITEM_UNITS.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="item-dp">{t("Decimal places")}</FieldLabel>
@@ -132,7 +163,7 @@ export function ItemFormDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {[0, 1, 2, 3, 4].map((n) => (
+                    {Array.from({ length: 11 }, (_, n) => n).map((n) => (
                       <SelectItem key={n} value={String(n)}>
                         {n === 0 ? t("0 (whole numbers)") : t("{n} digit(s)", { n })}
                       </SelectItem>
@@ -159,15 +190,6 @@ export function ItemFormDialog({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="item-group">{t("Group")}</FieldLabel>
-              <Input
-                id="item-group"
-                value={group}
-                onChange={(e) => setGroup(e.target.value)}
-                placeholder={t("e.g. Resistors, ICs, Wires")}
-              />
-            </Field>
             <Field>
               <FieldLabel htmlFor="item-pack">{t("Packaging (reference only)")}</FieldLabel>
               <Input

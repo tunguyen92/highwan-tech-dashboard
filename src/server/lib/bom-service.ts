@@ -1,7 +1,53 @@
 import mongoose, { type ClientSession, Types } from "mongoose";
 
-import { BOM_STATUS, Bom } from "@/server/models/bom";
+import { BOM_STATUS, type BomStatus } from "@/lib/wms/constants";
+import { Bom } from "@/server/models/bom";
 import { ITEM_TYPE, Item } from "@/server/models/item";
+
+type BomPageFilter = {
+  outputItemId?: string;
+  status?: BomStatus;
+  q?: string;
+  page: number;
+  pageSize: number;
+};
+
+const escapeRegex = (value: string) => value.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+
+export async function listBomsPage(f: BomPageFilter) {
+  const match: Record<string, unknown> = {};
+  if (f.outputItemId) match.outputItemId = new Types.ObjectId(f.outputItemId);
+  if (f.status) match.status = f.status;
+  if (f.q) match.outputItemCode = { $regex: escapeRegex(f.q), $options: "i" };
+
+  const [rows, total] = await Promise.all([
+    Bom.aggregate([
+      { $match: match },
+      { $sort: { outputItemCode: 1, version: -1, _id: 1 } },
+      { $skip: (f.page - 1) * f.pageSize },
+      { $limit: f.pageSize },
+      {
+        $lookup: {
+          from: Item.collection.name,
+          localField: "outputItemId",
+          foreignField: "_id",
+          as: "outputItem",
+        },
+      },
+      { $unwind: { path: "$outputItem", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          lineCount: { $size: "$lines" },
+          outputItemName: { $ifNull: ["$outputItem.name", ""] },
+        },
+      },
+      { $project: { lines: 0, outputItem: 0 } },
+    ]),
+    Bom.countDocuments(match),
+  ]);
+
+  return { rows, total, page: f.page, pageSize: f.pageSize };
+}
 
 /**
  * Prevents circular references: walks down the ACTIVE BOMs of semi-finished items.

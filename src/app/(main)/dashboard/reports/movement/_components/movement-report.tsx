@@ -4,9 +4,9 @@ import { useState } from "react";
 
 import { Download } from "lucide-react";
 
+import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useT } from "@/lib/i18n/provider";
@@ -58,11 +58,11 @@ export function MovementReport() {
       <div className="flex flex-wrap items-end gap-3 px-4">
         <Field className="w-40">
           <FieldLabel htmlFor="nxt-from">{t("From")}</FieldLabel>
-          <Input id="nxt-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+          <CalendarDatePicker id="nxt-from" value={from} max={to} onChange={setFrom} />
         </Field>
         <Field className="w-40">
           <FieldLabel htmlFor="nxt-to">{t("To")}</FieldLabel>
-          <Input id="nxt-to" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+          <CalendarDatePicker id="nxt-to" value={to} min={from} onChange={setTo} />
         </Field>
         <Tabs value={type} onValueChange={(value) => setType(value as TypeFilter)}>
           <TabsList>

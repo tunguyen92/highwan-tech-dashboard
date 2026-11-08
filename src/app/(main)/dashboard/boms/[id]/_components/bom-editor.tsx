@@ -38,7 +38,16 @@ import { useCan } from "../../../_components/wms/user-context";
 import { BomExplodePanel } from "./bom-explode-panel";
 import { BomTree } from "./bom-tree";
 
-type LineState = { key: number; itemId: string | null; quantity: string; scrapPercent: string; note: string };
+type LineState = {
+  key: number;
+  itemId: string | null;
+  itemCode: string;
+  itemName: string;
+  unit: string;
+  quantity: string;
+  scrapPercent: string;
+  note: string;
+};
 
 export function BomEditor({ bomId }: { bomId: string }) {
   const t = useT();
@@ -62,6 +71,9 @@ export function BomEditor({ bomId }: { bomId: string }) {
       bom.lines.map((line) => ({
         key: nextKey.current++,
         itemId: line.itemId,
+        itemCode: line.itemCode,
+        itemName: line.itemName,
+        unit: line.unit,
         quantity: line.quantity,
         scrapPercent: String(line.scrapPercent),
         note: line.note ?? "",
@@ -75,6 +87,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
 
   const editable = bom.status === "DRAFT" && canWrite;
   const itemById = new Map(items.map((item) => [item._id, item]));
+  const itemByCode = new Map(items.map((item) => [item.code, item]));
   const outputItem = itemById.get(bom.outputItemId);
 
   function patchLine(key: number, patch: Partial<LineState>) {
@@ -93,7 +106,19 @@ export function BomEditor({ bomId }: { bomId: string }) {
               : line,
           );
         } else {
-          next = [...next, { key: nextKey.current++, itemId: item._id, quantity, scrapPercent: "0", note: "" }];
+          next = [
+            ...next,
+            {
+              key: nextKey.current++,
+              itemId: item._id,
+              itemCode: item.code,
+              itemName: item.name,
+              unit: item.unit,
+              quantity,
+              scrapPercent: "0",
+              note: "",
+            },
+          ];
         }
       }
       return next;
@@ -110,7 +135,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
     }
 
     setBusy(true);
-    const result = await unwrapAs<unknown>(
+    const result = await unwrap(
       updateBomDraftAction(
         bomId,
         filled.map((line) => ({
@@ -122,7 +147,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
       ),
     );
     setBusy(false);
-    if (result === null) return false;
+    if (!result) return false;
     toast.success(t("Draft saved."));
     reload();
     return true;
@@ -131,7 +156,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
   async function activate() {
     if (dirty && !(await save())) return;
     const result = await unwrap(activateBomAction(bomId));
-    if (result !== null) {
+    if (result) {
       toast.success(t("BOM activated. The previous version is now superseded."));
       setConfirm(null);
       reload();
@@ -140,7 +165,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
 
   async function remove() {
     const result = await unwrap(deleteBomDraftAction(bomId));
-    if (result !== null) {
+    if (result) {
       toast.success(t("Draft deleted."));
       router.push("/dashboard/boms");
     }
@@ -205,7 +230,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
       >
         <Tabs defaultValue="lines" className="gap-4">
           <div className="px-4">
-            <TabsList>
+            <TabsList className="gap-2">
               <TabsTrigger value="lines">{t("Components")}</TabsTrigger>
               <TabsTrigger value="tree">{t("Expanded tree")}</TabsTrigger>
               <TabsTrigger value="explode">{t("Total requirement")}</TabsTrigger>
@@ -221,7 +246,16 @@ export function BomEditor({ bomId }: { bomId: string }) {
                   onClick={() => {
                     setLines((current) => [
                       ...current,
-                      { key: nextKey.current++, itemId: null, quantity: "", scrapPercent: "0", note: "" },
+                      {
+                        key: nextKey.current++,
+                        itemId: null,
+                        itemCode: "",
+                        itemName: "",
+                        unit: "",
+                        quantity: "",
+                        scrapPercent: "0",
+                        note: "",
+                      },
                     ]);
                     setDirty(true);
                   }}
@@ -254,7 +288,8 @@ export function BomEditor({ bomId }: { bomId: string }) {
                   </TableRow>
                 ) : null}
                 {lines.map((line) => {
-                  const item: ItemDTO | undefined = line.itemId ? itemById.get(line.itemId) : undefined;
+                  const item: ItemDTO | undefined =
+                    (line.itemId ? itemById.get(line.itemId) : undefined) ?? itemByCode.get(line.itemCode);
                   return (
                     <TableRow key={line.key}>
                       <TableCell>
@@ -262,17 +297,31 @@ export function BomEditor({ bomId }: { bomId: string }) {
                           <ItemPicker
                             items={items}
                             value={line.itemId}
+                            placeholder={
+                              item
+                                ? `${item.code} · ${item.name}`
+                                : line.itemCode
+                                  ? `${line.itemCode}${line.itemName ? ` · ${line.itemName}` : ""}`
+                                  : undefined
+                            }
                             allowedTypes={["MATERIAL", "SEMI"]}
                             excludeIds={[
                               bom.outputItemId,
                               ...lines.filter((l) => l.key !== line.key && l.itemId).map((l) => l.itemId as string),
                             ]}
-                            onChange={(picked) => patchLine(line.key, { itemId: picked._id })}
+                            onChange={(picked) =>
+                              patchLine(line.key, {
+                                itemId: picked._id,
+                                itemCode: picked.code,
+                                itemName: picked.name,
+                                unit: picked.unit,
+                              })
+                            }
                           />
                         ) : (
                           <span>
-                            <span className="font-medium">{item?.code}</span>
-                            <span className="text-muted-foreground"> • {item?.name}</span>
+                            <span className="font-medium">{line.itemCode || item?.code}</span>
+                            <span className="text-muted-foreground"> • {line.itemName || item?.name}</span>
                           </span>
                         )}
                       </TableCell>
@@ -286,7 +335,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
                           <span className="tabular-nums">{formatQty(line.quantity)}</span>
                         )}
                       </TableCell>
-                      <TableCell>{item?.unit}</TableCell>
+                      <TableCell>{line.unit || item?.unit}</TableCell>
                       <TableCell className="text-right">
                         {editable ? (
                           <QtyInput
@@ -333,7 +382,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
             </p>
             <p className="text-muted-foreground px-4 text-xs">
               {t(
-                "*, in each component's own unit of measure. Allowed scrap is the threshold that keeps the reconciliation report from raising false alarms; leave 0 to use the general tolerance.",
+                "Each quantity is expressed in the component's own unit of measure. Allowed scrap is the threshold that keeps the reconciliation report from raising false alarms; leave 0 to use the general tolerance.",
               )}
             </p>
           </TabsContent>

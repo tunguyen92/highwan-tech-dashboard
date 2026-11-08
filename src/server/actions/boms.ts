@@ -6,9 +6,13 @@ import { z } from "zod";
 import { run } from "@/server/lib/action";
 import { cloneBomAsDraft, createBomDraft, deleteBomDraft, getWhereUsed, updateBomDraft } from "@/server/lib/bom-draft";
 import { fillByBom, getBomTree } from "@/server/lib/bom-explode";
-import { activateBom } from "@/server/lib/bom-service";
-import { bomFilterSchema, bomLinesSchema, objectId, qty } from "@/server/lib/schemas";
+import { activateBom, listBomsPage } from "@/server/lib/bom-service";
+import { bomFilterSchema, bomLinesSchema, bomPageFilterSchema, objectId, qty } from "@/server/lib/schemas";
 import { Bom } from "@/server/models/bom";
+
+export async function listBomsPageAction(input: unknown = {}) {
+  return run("bom:read", async () => listBomsPage(bomPageFilterSchema.parse(input)));
+}
 
 export async function listBomsAction(input: unknown = {}) {
   return run("bom:read", async () => {
@@ -49,14 +53,14 @@ export async function updateBomDraftAction(bomId: unknown, lines: unknown, note?
       bomLinesSchema.parse(lines),
       z.string().max(500).optional().parse(note),
     );
-    return null;
+    return true;
   });
 }
 
 export async function deleteBomDraftAction(bomId: unknown) {
   return run("bom:write", async () => {
     await deleteBomDraft(objectId.parse(bomId));
-    return null;
+    return true;
   });
 }
 
@@ -71,7 +75,7 @@ export async function cloneBomAction(bomId: unknown) {
 export async function activateBomAction(bomId: unknown) {
   return run("bom:activate", async (user) => {
     await activateBom(objectId.parse(bomId), user.id);
-    return null;
+    return true;
   });
 }
 

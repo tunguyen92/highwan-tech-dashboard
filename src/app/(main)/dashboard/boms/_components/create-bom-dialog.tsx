@@ -58,7 +58,7 @@ export function CreateBomDialog({
           <DialogTitle>{t("Create BOM")}</DialogTitle>
           <DialogDescription>
             {t(
-              'Choose the finished or semi-finished item that needs a BOM. If the code already has an active BOM, open it and choose "Create new version."',
+              'Choose the finished or semi-finished item that needs a BOM. If the code already has an active BOM, open it and choose "Create new version".',
             )}
           </DialogDescription>
         </DialogHeader>

@@ -23,7 +23,9 @@ export async function isItemReferenced(itemId: string | Types.ObjectId) {
   return Boolean(tx || voucher || bom);
 }
 
-export async function listItems(f: { type?: string; q?: string; includeInactive: boolean }) {
+type ItemListFilter = { type?: string; q?: string; includeInactive: boolean };
+
+function buildItemFilter(f: ItemListFilter) {
   const filter: any = {};
   if (f.type) filter.type = f.type;
   if (!f.includeInactive) filter.isActive = true;
@@ -31,7 +33,25 @@ export async function listItems(f: { type?: string; q?: string; includeInactive:
     const re = new RegExp(escapeRegex(f.q), "i");
     filter.$or = [{ code: re }, { name: re }];
   }
+  return filter;
+}
+
+export async function listItems(f: ItemListFilter) {
+  const filter = buildItemFilter(f);
   return Item.find(filter).sort({ code: 1 }).limit(1000).lean();
+}
+
+export async function listItemsPage(f: ItemListFilter & { page: number; pageSize: number }) {
+  const filter = buildItemFilter(f);
+  const [rows, total] = await Promise.all([
+    Item.find(filter)
+      .sort({ code: 1, _id: 1 })
+      .skip((f.page - 1) * f.pageSize)
+      .limit(f.pageSize)
+      .lean(),
+    Item.countDocuments(filter),
+  ]);
+  return { rows, total, page: f.page, pageSize: f.pageSize };
 }
 
 export async function createItem(input: any) {

@@ -1,9 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export function useItems() {
-  return useQuery({
-    queryKey: ["items"],
-    queryFn: () => fetch("/api/items").then((res) => res.json()),
+import type { ItemDTO } from "@/lib/wms/types";
+
+type PaginatedItems = { rows: ItemDTO[]; total: number; page: number; pageSize: number };
+
+export function useItems(page = 1, pageSize = 20) {
+  return useQuery<PaginatedItems>({
+    queryKey: ["items", page, pageSize],
+    queryFn: async () => {
+      const response = await fetch(`/api/items?page=${page}&pageSize=${pageSize}`);
+      if (!response.ok) throw new Error("Failed to fetch items");
+      return response.json();
+    },
   });
 }
 

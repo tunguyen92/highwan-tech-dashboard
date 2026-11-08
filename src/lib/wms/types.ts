@@ -4,10 +4,11 @@ export type ItemDTO = {
   _id: string;
   code: string;
   name: string;
+  spec?: string;
+  productionLine?: string;
   type: ItemType;
   unit: string;
   decimalPlaces: number;
-  group?: string;
   minStock: string;
   isStocked: boolean;
   excludeFromReconciliation: boolean;
@@ -22,7 +23,7 @@ export type StockRow = {
   name: string;
   unit: string;
   type: ItemType;
-  group?: string;
+  productionLine?: string;
   onHand: string;
   minStock: string;
   isLow: boolean;
@@ -59,6 +60,7 @@ export type BomListRow = {
   _id: string;
   outputItemId: string;
   outputItemCode: string;
+  outputItemName: string;
   version: number;
   status: BomStatus;
   lineCount: number;

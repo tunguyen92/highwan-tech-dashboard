@@ -1,12 +1,22 @@
 "use server";
 
 import { run } from "@/server/lib/action";
-import { createItem, listItems, setItemActive, updateItem } from "@/server/lib/item-service";
-import { itemCreateSchema, itemFilterSchema, itemUpdateSchema, objectId } from "@/server/lib/schemas";
+import { createItem, listItems, listItemsPage, setItemActive, updateItem } from "@/server/lib/item-service";
+import {
+  itemCreateSchema,
+  itemFilterSchema,
+  itemPageFilterSchema,
+  itemUpdateSchema,
+  objectId,
+} from "@/server/lib/schemas";
 import { Item } from "@/server/models/item";
 
 export async function listItemsAction(input: unknown = {}) {
   return run("item:read", async () => listItems(itemFilterSchema.parse(input)));
+}
+
+export async function listItemsPageAction(input: unknown = {}) {
+  return run("item:read", async () => listItemsPage(itemPageFilterSchema.parse(input)));
 }
 
 export async function getItemAction(itemId: unknown) {

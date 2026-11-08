@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import { Plus, Search } from "lucide-react";
 
+import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -151,12 +151,13 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
 
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{t("Month:")}</span>
-            <Input
+            <CalendarDatePicker
+              id="vouchers-period"
               type="month"
-              className="h-7 w-40"
               value={period}
-              onChange={(event) => {
-                setPeriod(event.target.value);
+              clearable
+              onChange={(value) => {
+                setPeriod(value);
                 setPage(1);
               }}
             />

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -15,8 +15,8 @@ import { unwrapAs } from "@/lib/wms/action-client";
 import { BOM_STATUS_LABEL, type BomStatus } from "@/lib/wms/constants";
 import { formatDate } from "@/lib/wms/format";
 import type { BomListRow } from "@/lib/wms/types";
-import { useLoad } from "@/lib/wms/use-load";
-import { listBomsAction } from "@/server/actions/boms";
+import { useDebounced, useLoad } from "@/lib/wms/use-load";
+import { listBomsPageAction } from "@/server/actions/boms";
 
 import { PageCard, tableClass } from "../../_components/wms/page-card";
 import { BomStatusBadge } from "../../_components/wms/status-badges";
@@ -26,22 +26,42 @@ import { useCan } from "../../_components/wms/user-context";
 import { CreateBomDialog } from "./create-bom-dialog";
 
 type StatusFilter = "ALL" | BomStatus;
+type BomListResult = { rows: BomListRow[]; total: number; page: number; pageSize: number };
 
 export function BomsScreen() {
   const t = useT();
   const canWrite = useCan("bom:write");
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("ACTIVE");
+  const [status, setStatus] = useState<StatusFilter>("ALL");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [creating, setCreating] = useState(false);
   const { items } = useItems();
+  const debouncedQ = useDebounced(q);
 
   const { data, loading } = useLoad(
-    () => unwrapAs<BomListRow[]>(listBomsAction({ status: status === "ALL" ? undefined : status })),
-    [status],
+    () =>
+      unwrapAs<BomListResult>(
+        listBomsPageAction({
+          q: debouncedQ || undefined,
+          status: status === "ALL" ? undefined : status,
+          page,
+          pageSize,
+        }),
+      ),
+    [debouncedQ, status, page, pageSize],
   );
 
-  const nameOf = new Map(items.map((item) => [item._id, item.name]));
-  const rows = (data ?? []).filter((bom) => bom.outputItemCode.toLowerCase().includes(q.trim().toLowerCase()));
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const pages = Array.from({ length: Math.min(5, pageCount) }, (_, index) => pageStart + index);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   return (
     <>
@@ -60,7 +80,10 @@ export function BomsScreen() {
                 className="h-7"
                 placeholder={t("Search by code...")}
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setPage(1);
+                }}
               />
             </InputGroup>
             {canWrite ? (
@@ -72,7 +95,13 @@ export function BomsScreen() {
         }
       >
         <div className="px-4">
-          <Select value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
+          <Select
+            value={status}
+            onValueChange={(value) => {
+              setStatus(value as StatusFilter);
+              setPage(1);
+            }}
+          >
             <SelectTrigger size="sm">
               <span className="text-muted-foreground">{t("Status:")}</span>
               <SelectValue />
@@ -113,7 +142,7 @@ export function BomsScreen() {
                       {bom.outputItemCode}
                     </Link>
                   </TableCell>
-                  <TableCell>{nameOf.get(bom.outputItemId)}</TableCell>
+                  <TableCell>{bom.outputItemName || bom.outputItemCode}</TableCell>
                   <TableCell className="tabular-nums">v{bom.version}</TableCell>
                   <TableCell>
                     <BomStatusBadge status={bom.status} />
@@ -125,6 +154,72 @@ export function BomsScreen() {
               ))}
           </TableBody>
         </Table>
+        <footer className="bg-background flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-t px-4 py-2 text-sm">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-4">
+            <span className="tabular-nums" aria-live="polite">
+              {t("{start}–{end} of {total} BOMs", {
+                start: total ? (currentPage - 1) * pageSize + 1 : 0,
+                end: Math.min(currentPage * pageSize, total),
+                total,
+              })}
+            </span>
+            <div className="flex items-center gap-2">
+              <label htmlFor="boms-page-size">{t("Rows per page")}</label>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="boms-page-size" size="sm" className="w-16">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  <SelectGroup>
+                    {[10, 25, 50, 100].map((size) => (
+                      <SelectItem key={size} value={String(size)}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <nav aria-label={t("BOM pages")} className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label={t("Previous page")}
+              disabled={currentPage <= 1}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              <ChevronLeft />
+            </Button>
+            {pages.map((pageNumber) => (
+              <Button
+                key={pageNumber}
+                variant={pageNumber === currentPage ? "secondary" : "ghost"}
+                size="icon-sm"
+                aria-label={t("Page {page}", { page: pageNumber })}
+                aria-current={pageNumber === currentPage ? "page" : undefined}
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label={t("Next page")}
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              <ChevronRight />
+            </Button>
+          </nav>
+        </footer>
       </PageCard>
 
       <CreateBomDialog open={creating} onOpenChange={setCreating} items={items} />

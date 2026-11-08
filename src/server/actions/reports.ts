@@ -4,12 +4,19 @@ import { run } from "@/server/lib/action";
 import { getOverview } from "@/server/lib/overview";
 import {
   getCurrentStock,
+  getCurrentStockPage,
   getMonthlyReconciliation,
   getStockCard,
   getStockSummary,
   vnDayStart,
 } from "@/server/lib/reports";
-import { currentStockSchema, reconciliationSchema, stockCardSchema, stockSummarySchema } from "@/server/lib/schemas";
+import {
+  currentStockPageSchema,
+  currentStockSchema,
+  reconciliationSchema,
+  stockCardSchema,
+  stockSummarySchema,
+} from "@/server/lib/schemas";
 
 const DAY_MS = 24 * 3600_000;
 
@@ -21,6 +28,10 @@ const range = (from: string, to: string) => ({
 
 export async function currentStockAction(input: unknown = {}) {
   return run("report:read", async () => getCurrentStock(currentStockSchema.parse(input)));
+}
+
+export async function currentStockPageAction(input: unknown = {}) {
+  return run("report:read", async () => getCurrentStockPage(currentStockPageSchema.parse(input)));
 }
 
 export async function stockSummaryAction(input: unknown) {

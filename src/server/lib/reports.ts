@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { Types } from "mongoose";
+import { type PipelineStage, Types } from "mongoose";
 
 import { Item } from "@/server/models/item";
 import { StockTransaction } from "@/server/models/stock-transaction";
@@ -7,6 +7,59 @@ import { StockTransaction } from "@/server/models/stock-transaction";
 import { explodeBom } from "./bom-explode";
 
 const dec = (v: any) => new Decimal(v ? v.toString() : 0);
+
+type CurrentStockFilter = { type?: "MATERIAL" | "PRODUCT"; lowOnly: boolean; q?: string };
+type CurrentStockAggregateRow = {
+  _id: Types.ObjectId;
+  code: string;
+  name: string;
+  productionLine?: string;
+  unit: string;
+  type: "MATERIAL" | "PRODUCT";
+  onHand: Types.Decimal128;
+  minStock: Types.Decimal128;
+  isLow: boolean;
+};
+type CurrentStockPageAggregation = {
+  rows: CurrentStockAggregateRow[];
+  total: { count: number }[];
+  lowCount: { count: number }[];
+};
+
+function currentStockBaseStages(f: CurrentStockFilter): PipelineStage[] {
+  const match: Record<string, unknown> = { isActive: true, isStocked: true };
+  if (f.type) match.type = f.type;
+  if (f.q) {
+    const re = new RegExp(f.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
+    match.$or = [{ code: re }, { name: re }];
+  }
+
+  const zero = { $toDecimal: 0 };
+  return [
+    { $match: match },
+    { $lookup: { from: "inventories", localField: "_id", foreignField: "itemId", as: "inv" } },
+    {
+      $addFields: {
+        onHand: { $ifNull: [{ $arrayElemAt: ["$inv.onHand", 0] }, zero] },
+      },
+    },
+    { $addFields: { isLow: { $lt: ["$onHand", { $ifNull: ["$minStock", zero] }] } } },
+  ];
+}
+
+function mapCurrentStockRows(rows: CurrentStockAggregateRow[]) {
+  return rows.map((r) => ({
+    itemId: String(r._id),
+    code: r.code,
+    name: r.name,
+    productionLine: r.productionLine,
+    unit: r.unit,
+    type: r.type,
+    onHand: dec(r.onHand).toString(),
+    minStock: dec(r.minStock).toString(),
+    isLow: r.isLow,
+  }));
+}
 
 /** Converts a "YYYY-MM-DD" date in Vietnam time to a UTC instant (00:00 Vietnam time) */
 export const vnDayStart = (ymd: string) => new Date(`${ymd}T00:00:00+07:00`);
@@ -157,39 +210,41 @@ export async function getMonthlyReconciliation(period: string, defaultToleranceP
 }
 
 /** Current stock per item (the "Stock" screen). Items without a movement yet show 0. */
-export async function getCurrentStock(f: { type?: "MATERIAL" | "PRODUCT"; lowOnly: boolean; q?: string }) {
-  const match: any = { isActive: true, isStocked: true };
-  if (f.type) match.type = f.type;
-  if (f.q) {
-    const re = new RegExp(f.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
-    match.$or = [{ code: re }, { name: re }];
-  }
-
-  const zero = { $toDecimal: 0 };
-  const rows = await Item.aggregate([
-    { $match: match },
-    { $lookup: { from: "inventories", localField: "_id", foreignField: "itemId", as: "inv" } },
-    {
-      $addFields: {
-        onHand: { $ifNull: [{ $arrayElemAt: ["$inv.onHand", 0] }, zero] },
-      },
-    },
-    { $addFields: { isLow: { $lt: ["$onHand", { $ifNull: ["$minStock", zero] }] } } },
+export async function getCurrentStock(f: CurrentStockFilter) {
+  const rows = await Item.aggregate<CurrentStockAggregateRow>([
+    ...currentStockBaseStages(f),
     ...(f.lowOnly ? [{ $match: { isLow: true } }] : []),
-    { $sort: { code: 1 } },
+    { $sort: { code: 1, _id: 1 } },
     { $project: { inv: 0 } },
   ]);
-  return rows.map((r) => ({
-    itemId: String(r._id),
-    code: r.code,
-    name: r.name,
-    unit: r.unit,
-    type: r.type,
-    group: r.group,
-    onHand: dec(r.onHand).toString(),
-    minStock: dec(r.minStock).toString(),
-    isLow: r.isLow as boolean,
-  }));
+  return mapCurrentStockRows(rows);
+}
+
+export async function getCurrentStockPage(f: CurrentStockFilter & { page: number; pageSize: number }) {
+  const lowOnlyStages: PipelineStage[] = f.lowOnly ? [{ $match: { isLow: true } }] : [];
+  const [result] = await Item.aggregate<CurrentStockPageAggregation>([
+    ...currentStockBaseStages(f),
+    {
+      $facet: {
+        rows: [
+          ...lowOnlyStages,
+          { $sort: { code: 1, _id: 1 } },
+          { $skip: (f.page - 1) * f.pageSize },
+          { $limit: f.pageSize },
+          { $project: { inv: 0 } },
+        ],
+        total: [...lowOnlyStages, { $count: "count" }],
+        lowCount: [{ $match: { isLow: true } }, { $count: "count" }],
+      },
+    },
+  ]);
+  return {
+    rows: mapCurrentStockRows(result?.rows ?? []),
+    total: result?.total[0]?.count ?? 0,
+    lowCount: result?.lowCount[0]?.count ?? 0,
+    page: f.page,
+    pageSize: f.pageSize,
+  };
 }
 
 /** Stock card for one item over [from, to): opening balance plus every movement with its running balance */
