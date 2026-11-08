@@ -91,11 +91,11 @@ async function fail(e: any): Promise<ActionResult<never>> {
 }
 
 /** Runs an authorized action: connect, check permission, execute, serialize, map errors */
-export async function run<T>(
+export async function run<T, Demo = T>(
   permission: Permission,
   fn: (user: SessionUser) => Promise<T>,
-  demoFn?: (user: SessionUser) => Promise<T> | T,
-): Promise<ActionResult<T>> {
+  demoFn?: (user: SessionUser) => Promise<Demo> | Demo,
+): Promise<ActionResult<T | Demo>> {
   try {
     if (isWarehouseDemoMode()) {
       if (!demoFn) throw new Error("DEMO_READ_ONLY");
@@ -111,7 +111,10 @@ export async function run<T>(
 }
 
 /** Same as run, for actions that need no session (login) */
-export async function runPublic<T>(fn: () => Promise<T>, demoFn?: () => Promise<T> | T): Promise<ActionResult<T>> {
+export async function runPublic<T, Demo = T>(
+  fn: () => Promise<T>,
+  demoFn?: () => Promise<Demo> | Demo,
+): Promise<ActionResult<T | Demo>> {
   try {
     if (isWarehouseDemoMode()) {
       if (!demoFn) throw new Error("DEMO_READ_ONLY");
