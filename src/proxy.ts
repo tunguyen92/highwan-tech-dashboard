@@ -12,14 +12,10 @@ const SESSION_COOKIE = "session";
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // The login page is always reachable; it redirects away itself when the session is truly valid
-  // if (pathname === '/login') return NextResponse.next();
+  if (pathname === "/") return NextResponse.redirect(new URL("/dashboard", req.url));
+  if (pathname === "/login") return NextResponse.next();
 
-  // Local development only: see getCurrentUser in src/server/lib/auth.ts
-  // const bypass = process.env.NODE_ENV === "development" && process.env.DEV_AUTH_BYPASS === "true";
-  const bypass = true;
-
-  let valid = bypass;
+  let valid = false;
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const secret = process.env.AUTH_SECRET;
   if (token && secret) {
@@ -31,8 +27,7 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // if (!valid) return NextResponse.redirect(new URL('/login', req.url));
-  if (pathname === "/") return NextResponse.redirect(new URL("/dashboard", req.url));
+  if (!valid) return NextResponse.redirect(new URL("/login", req.url));
   return NextResponse.next();
 }
 

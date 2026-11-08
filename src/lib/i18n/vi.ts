@@ -11,6 +11,7 @@ export const vi: Record<string, string> = {
   Close: "Đóng",
   "Select an item...": "Chọn mã hàng...",
   "Search by code or name...": "Tìm theo mã hoặc tên...",
+  "Search by username or name...": "Tìm theo tên đăng nhập hoặc họ tên...",
   "No item found.": "Không tìm thấy mã hàng.",
   Page: "Trang",
   records: "bản ghi",
@@ -32,6 +33,7 @@ export const vi: Record<string, string> = {
   "Change password": "Đổi mật khẩu",
   "User created.": "Đã tạo người dùng.",
   "Add user": "Thêm người dùng",
+  "No matching users.": "Không tìm thấy người dùng phù hợp.",
   "The user should change the password at the first sign-in.": "Người dùng nên đổi mật khẩu ở lần đăng nhập đầu tiên.",
   "Letters, digits, dots, hyphens, underscores. At least 3 characters.":
     "Chữ, số, dấu chấm, gạch ngang, gạch dưới. Tối thiểu 3 ký tự.",

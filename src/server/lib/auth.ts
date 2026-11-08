@@ -59,11 +59,6 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     };
   }
 
-  // Local development only: DEV_AUTH_BYPASS=true skips login and acts as a fixed administrator.
-  if (process.env.NODE_ENV === "development" && process.env.DEV_AUTH_BYPASS === "true") {
-    return { id: "000000000000000000000001", username: "dev-admin", name: "Dev Admin", role: ROLE.ADMIN };
-  }
-
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {

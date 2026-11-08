@@ -132,11 +132,10 @@ In development, the read-only Faker fixture is enabled automatically when `MONGO
 
 ```env
 MOCK_DB=true
-DEV_AUTH_BYPASS=true
 MOCK_DB_DAYS=60
 ```
 
-The database is reset and reseeded whenever the server restarts. To use the login screen instead of the development auth bypass, set `DEV_AUTH_BYPASS=false` and sign in with `demo-admin` / `warehouse123`.
+The database is reset and reseeded whenever the server restarts. Sign in with the seeded `demo-admin` account (`warehouse123`).
 
 ### Production warehouse showcase
 

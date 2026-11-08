@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
-import { ROLE_LABEL } from "@/lib/wms/constants";
+import { ROLE, ROLE_LABEL, type Role } from "@/lib/wms/constants";
 import { formatDateTime } from "@/lib/wms/format";
 import type { UserDTO } from "@/lib/wms/types";
 import { useLoad } from "@/lib/wms/use-load";
@@ -33,8 +35,21 @@ export function UsersScreen() {
   const me = useWmsUser();
   const canManage = useCan("user:manage");
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "LOCKED">("ALL");
   const { data, loading, reload } = useLoad(() => unwrapAs<UserDTO[]>(listUsersAction()), []);
   const rows = data ?? [];
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredRows = rows.filter((user) => {
+    const matchesQuery =
+      !normalizedQuery ||
+      user.username.toLowerCase().includes(normalizedQuery) ||
+      user.name.toLowerCase().includes(normalizedQuery);
+    const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
+    const matchesStatus = statusFilter === "ALL" || (statusFilter === "ACTIVE" ? user.isActive : !user.isActive);
+    return matchesQuery && matchesRole && matchesStatus;
+  });
 
   return (
     <>
@@ -45,12 +60,58 @@ export function UsersScreen() {
         )}
         actions={
           canManage ? (
-            <Button size="sm" onClick={() => setDialog({ kind: "create" })}>
-              <Plus /> {t("Add user")}
-            </Button>
+            <>
+              <InputGroup className="h-7 w-full md:w-64">
+                <InputGroupAddon>
+                  <Search />
+                </InputGroupAddon>
+                <InputGroupInput
+                  aria-label={t("Search by username or name...")}
+                  placeholder={t("Search by username or name...")}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </InputGroup>
+              <Button size="sm" onClick={() => setDialog({ kind: "create" })}>
+                <Plus data-icon="inline-start" /> {t("Add user")}
+              </Button>
+            </>
           ) : null
         }
       >
+        <div className="flex flex-wrap items-center gap-3 px-4">
+          <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as Role | "ALL")}>
+            <SelectTrigger size="sm" aria-label={t("Role")}>
+              <span className="text-muted-foreground">{t("Role")}:</span>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" align="start">
+              <SelectGroup>
+                <SelectItem value="ALL">{t("All")}</SelectItem>
+                {Object.values(ROLE).map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {t(ROLE_LABEL[role])}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+            <SelectTrigger size="sm" aria-label={t("Status")}>
+              <span className="text-muted-foreground">{t("Status")}:</span>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" align="start">
+              <SelectGroup>
+                <SelectItem value="ALL">{t("All")}</SelectItem>
+                <SelectItem value="ACTIVE">{t("Active")}</SelectItem>
+                <SelectItem value="LOCKED">{t("Locked")}</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
         <Table className={tableClass}>
           <TableHeader className="[&_tr]:border-t">
             <TableRow>
@@ -65,8 +126,11 @@ export function UsersScreen() {
           <TableBody>
             {loading ? <LoadingRows columns={6} /> : null}
             {!loading && rows.length === 0 ? <EmptyRow columns={6} /> : null}
+            {!loading && rows.length > 0 && filteredRows.length === 0 ? (
+              <EmptyRow columns={6} text={t("No matching users.")} />
+            ) : null}
             {!loading &&
-              rows.map((user) => (
+              filteredRows.map((user) => (
                 <TableRow key={user._id}>
                   <TableCell className="font-medium">
                     {user.username} {user._id === me.id ? <Badge variant="outline">{t("You")}</Badge> : null}
