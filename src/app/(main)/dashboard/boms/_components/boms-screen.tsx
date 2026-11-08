@@ -109,7 +109,7 @@ export function BomsScreen() {
               rows.map((bom) => (
                 <TableRow key={bom._id}>
                   <TableCell className="font-medium">
-                    <Link href={`/dashboard/boms/${bom._id}`} className="hover:underline">
+                    <Link href={`/dashboard/boms/${bom._id}`} className="text-primary underline underline-offset-4">
                       {bom.outputItemCode}
                     </Link>
                   </TableCell>

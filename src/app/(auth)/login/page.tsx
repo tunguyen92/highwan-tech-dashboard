@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page() {
   const t = await getServerT();
-  if (await getCurrentUser()) redirect("/dashboard/stock");
+  if (await getCurrentUser()) redirect("/dashboard");
 
   return (
     <main className="bg-muted/40 relative flex min-h-screen items-center justify-center p-4">

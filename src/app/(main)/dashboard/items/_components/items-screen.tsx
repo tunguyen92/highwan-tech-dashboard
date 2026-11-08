@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -146,22 +148,27 @@ export function ItemsScreen() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {canWrite ? (
-                          <DropdownMenuItem onClick={() => setForm({ item })}>{t("Edit")}</DropdownMenuItem>
-                        ) : null}
-                        {item.type !== "PRODUCT" ? (
-                          <DropdownMenuItem onClick={() => setWhereUsed(item)}>
-                            {t("Used in which BOMs")}
-                          </DropdownMenuItem>
-                        ) : null}
-                        {canWrite ? (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setToggle(item)}>
-                              {item.isActive ? t("Deactivate") : t("Reactivate")}
+                        <DropdownMenuGroup>
+                          {canWrite ? (
+                            <DropdownMenuItem onClick={() => setForm({ item })}>{t("Edit")}</DropdownMenuItem>
+                          ) : null}
+                          {item.type !== "PRODUCT" ? (
+                            <DropdownMenuItem onClick={() => setWhereUsed(item)}>
+                              {t("Used in which BOMs")}
                             </DropdownMenuItem>
-                          </>
-                        ) : null}
+                          ) : null}
+                          {canWrite ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => setToggle(item)}>
+                                {item.isActive ? t("Deactivate") : t("Reactivate")}
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                          {!canWrite && item.type === "PRODUCT" ? (
+                            <DropdownMenuLabel>{t("No actions available")}</DropdownMenuLabel>
+                          ) : null}
+                        </DropdownMenuGroup>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

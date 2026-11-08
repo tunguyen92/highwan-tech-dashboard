@@ -181,7 +181,11 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
               rows.map((row) => (
                 <TableRow key={row._id}>
                   <TableCell>
-                    <Button variant="link" className="h-auto p-0 font-medium" onClick={() => setSheet({ id: row._id })}>
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 font-medium underline underline-offset-4"
+                      onClick={() => setSheet({ id: row._id })}
+                    >
                       {row.voucherNo ?? t("(Draft)")}
                     </Button>
                   </TableCell>

@@ -163,6 +163,7 @@ export const vi: Record<string, string> = {
   "Raw material": "Nguyên liệu",
   "Semi-finished": "Bán thành phẩm",
   "Finished product": "Thành phẩm",
+  "No actions available": "Không có thao tác khả dụng",
   "Show discontinued items": "Hiện mã đã ngừng sử dụng",
   Type: "Loại",
   "No items.": "Không có mã hàng nào.",

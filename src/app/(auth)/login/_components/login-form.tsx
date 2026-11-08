@@ -27,7 +27,7 @@ export function LoginForm() {
     const result = await unwrapAs<unknown>(loginAction({ username, password }));
     if (result) {
       toast.success(t("Signed in."));
-      router.replace("/dashboard/stock");
+      router.replace("/dashboard");
       router.refresh();
       return;
     }

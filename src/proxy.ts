@@ -32,7 +32,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // if (!valid) return NextResponse.redirect(new URL('/login', req.url));
-  if (pathname === "/") return NextResponse.redirect(new URL("/dashboard/stock", req.url));
+  if (pathname === "/") return NextResponse.redirect(new URL("/dashboard", req.url));
   return NextResponse.next();
 }
 
