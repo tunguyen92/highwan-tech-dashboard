@@ -221,7 +221,7 @@ export async function getCurrentStock(f: CurrentStockFilter) {
 }
 
 export async function getCurrentStockPage(f: CurrentStockFilter & { page: number; pageSize: number }) {
-  const lowOnlyStages: PipelineStage[] = f.lowOnly ? [{ $match: { isLow: true } }] : [];
+  const lowOnlyStages: PipelineStage.FacetPipelineStage[] = f.lowOnly ? [{ $match: { isLow: true } }] : [];
   const [result] = await Item.aggregate<CurrentStockPageAggregation>([
     ...currentStockBaseStages(f),
     {
