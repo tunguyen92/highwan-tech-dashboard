@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ["mongoose", "bcryptjs", "mongodb-memory-server"],
+  serverExternalPackages: ["mongoose", "bcryptjs"],
   compiler: {
     removeConsole:
       process.env.NODE_ENV === "production"

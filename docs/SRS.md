@@ -424,32 +424,7 @@ Mã lỗi nghiệp vụ là phần trước dấu : của thông báo; phần sa
 
 ## 11. Kiểm thử và truy vết
 
-### 11.1 Kiểm thử tự động mức dịch vụ
-
-scripts/smoke-test.ts chạy các dịch vụ nghiệp vụ trên MongoDB replica set trong bộ nhớ (không cần Next.js, không cần cài MongoDB). Lệnh: npm run wms:test. Kết quả ở lần phát hành này: _toàn bộ đạt (46 kiểm tra)_.
-
-| Nhóm kiểm tra                                                                                      | Yêu cầu / quy tắc được phủ         |
-| -------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| Mã hàng chuẩn hóa chữ hoa; SEMI không lưu kho; trùng mã bị chặn                                    | FR-ITM-01, FR-ITM-02               |
-| Định mức đa cấp kích hoạt được; MATERIAL không lập định mức; PRODUCT không là thành phần           | FR-BOM-01, FR-BOM-02, BR-07        |
-| Phát hiện vòng lặp khi kích hoạt                                                                   | FR-BOM-04, BR-08                   |
-| Khai triển: R1=500, W1=50, tối đa 55 (dung sai không bị nhân dồn sai)                              | FR-BOM-07, mục 6.3                 |
-| Cây khai triển mở đúng thành phần của bán thành phẩm                                               | FR-BOM-06                          |
-| Phiếu: sai loại mã, SEMI trên phiếu, quá số lẻ bị chặn                                             | FR-VCH-02, BR-06                   |
-| Xác nhận: cấp số PN-…-00001; xác nhận hai lần bị chặn; cập nhật tồn; phiếu xác nhận không sửa được | FR-VCH-04, FR-VCH-05, BR-02, BR-03 |
-| “Điền theo định mức” + xác nhận phiếu xuất sản xuất                                                | FR-BOM-08, FR-VCH-07               |
-| Xuất vượt tồn bị chặn; phiếu vẫn là nháp, tồn không đổi, không có dòng sổ                          | BR-01, mục 6.1 bước 6              |
-| Hai phiếu xuất đồng thời (300 + 300 so với tồn 500): đúng một phiếu thành công                     | FR-STK-05, NFR-02                  |
-| Hủy phiếu xuất hoàn tồn; không hủy hai lần; một giao dịch đảo; bắt buộc lý do                      | FR-VCH-06, BR-04                   |
-| Hủy phiếu nhập đã tiêu thụ hàng bị chặn                                                            | BR-01, mục 6.2                     |
-| Sổ kho: update/delete bị chặn                                                                      | FR-STK-03, BR-05                   |
-| Khóa đổi đơn vị khi đã dùng; không ngừng mã còn tồn                                                | BR-10, BR-11                       |
-| Đối chiếu: nhu cầu 500 so với thực xuất 515 → OVER; thành phẩm thiếu định mức được liệt kê skipped | FR-RPT-02                          |
-| NXT: tồn cuối = đầu + nhập − xuất; thẻ kho có số dư chạy cuối kỳ đúng                              | FR-RPT-01, FR-STK-02               |
-
-Kiểm tra đa ngôn ngữ: npm run wms:i18n (scripts/check-i18n.ts) quét mã nguồn: _362 khóa trong mã, 362 bản dịch, không thiếu, không thừa, placeholder khớp_. Đã thử xóa một bản dịch để xác nhận lệnh báo lỗi và thoát với mã khác 0.
-
-### 11.2 Kiểm tra tích hợp thủ công đã thực hiện
+### 11.1 Kiểm tra tích hợp thủ công đã thực hiện
 
 Build production thành công (không lỗi TypeScript), khởi động next start với MongoDB replica set thật và kiểm tra:
 
@@ -464,7 +439,7 @@ Build production thành công (không lỗi TypeScript), khởi động next sta
 | Không có cookie, hoặc cookie wms_locale=fr   | Tiếng Việt                                                                                                                                                                                                                             |
 | Nhật ký máy chủ                              | Không có lỗi                                                                                                                                                                                                                           |
 
-### 11.3 Chưa kiểm thử tự động
+### 11.2 Chưa kiểm thử tự động
 
 Giao diện (thao tác chuột/bàn phím trong trình duyệt), hiệu năng với dữ liệu lớn, và việc gọi Server Action từ trình duyệt thật. Nên chạy thử thủ công luồng 6.1–6.6 của PRD.md trước khi dùng thật.
 

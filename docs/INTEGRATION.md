@@ -28,12 +28,11 @@ cd /duong/dan/toi/repo-template
 # 2) Cài thư viện mới
 
 npm install mongoose jose bcryptjs decimal.js
-npm install -D tsx mongodb-memory-server
+npm install -D tsx
 
 # 3) Thêm các lệnh tiện ích vào package.json
 
 npm pkg set scripts.wms:setup=“tsx --env-file=.env.local scripts/setup.ts” \
- scripts.wms:test=“tsx scripts/smoke-test.ts” \
  scripts.wms:i18n=“tsx scripts/check-i18n.ts” \
  scripts.wms:cleanup=“node scripts/cleanup-template.mjs”
 
@@ -78,7 +77,6 @@ Mở http://localhost:3000, đăng nhập bằng ADMIN_USERNAME / ADMIN_PASSWORD
 | Lệnh                      | Việc làm                                                                                                                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | npm run wms:setup         | Tạo chỉ mục (kể cả chỉ mục duy nhất một phần) và quản trị viên đầu tiên. Chạy lại sau khi cập nhật gói nếu có thay đổi chỉ mục |
-| npm run wms:test          | Kiểm thử nghiệp vụ kho trên MongoDB replica set tạo tạm trong bộ nhớ (46 kiểm tra). Lần chạy đầu tải bản mongod về máy         |
 | npm run wms:i18n          | Kiểm tra mọi chuỗi tiếng Việt trong mã đều có bản dịch tiếng Anh                                                               |
 | npm run wms:cleanup       | Xóa màn hình demo của template (-- --dry-run để chỉ liệt kê). Chạy bằng Node nên dùng được trên mọi hệ điều hành               |
 | npm run build / npm start | Build và chạy production                                                                                                       |
@@ -129,7 +127,6 @@ _12 file của template bị ghi đè_ (đã chỉnh cho hệ thống kho):
 | Trang không có menu “Người dùng”                             | Chỉ vai trò Quản trị viên mới có                                                                                                                                   |
 | wms:i18n báo thiếu bản dịch                                  | Thêm khóa vào src/lib/i18n/en.ts                                                                                                                                   |
 | wms:cleanup rồi tsc báo lỗi import                           | Có file của bạn đang dùng thư mục đã xóa (ví dụ src/data). Khôi phục bằng git hoặc sửa import                                                                      |
-| wms:test chạy chậm lần đầu                                   | Đang tải bản mongod (khoảng vài chục MB), các lần sau dùng bản đã tải                                                                                              |
 
 ## 10. Giới hạn cần biết
 

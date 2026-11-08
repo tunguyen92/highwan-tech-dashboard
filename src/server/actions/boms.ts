@@ -8,41 +8,26 @@ import { cloneBomAsDraft, createBomDraft, deleteBomDraft, getWhereUsed, updateBo
 import { fillByBom, getBomTree } from "@/server/lib/bom-explode";
 import { activateBom } from "@/server/lib/bom-service";
 import { bomFilterSchema, bomLinesSchema, objectId, qty } from "@/server/lib/schemas";
-import {
-  getDemoBom,
-  getDemoBoms,
-  getDemoBomTree,
-  getDemoFillByBom,
-  getDemoWhereUsed,
-} from "@/server/lib/warehouse-demo";
 import { Bom } from "@/server/models/bom";
 
 export async function listBomsAction(input: unknown = {}) {
-  return run(
-    "bom:read",
-    async () => {
-      const f = bomFilterSchema.parse(input);
-      const match: Record<string, unknown> = {};
-      if (f.outputItemId) match.outputItemId = new Types.ObjectId(f.outputItemId);
-      if (f.status) match.status = f.status;
-      return Bom.aggregate([
-        { $match: match },
-        { $sort: { outputItemId: 1, version: -1 } },
-        { $limit: 500 },
-        { $addFields: { lineCount: { $size: "$lines" } } },
-        { $project: { lines: 0 } },
-      ]);
-    },
-    () => getDemoBoms(bomFilterSchema.parse(input)),
-  );
+  return run("bom:read", async () => {
+    const f = bomFilterSchema.parse(input);
+    const match: Record<string, unknown> = {};
+    if (f.outputItemId) match.outputItemId = new Types.ObjectId(f.outputItemId);
+    if (f.status) match.status = f.status;
+    return Bom.aggregate([
+      { $match: match },
+      { $sort: { outputItemId: 1, version: -1 } },
+      { $limit: 500 },
+      { $addFields: { lineCount: { $size: "$lines" } } },
+      { $project: { lines: 0 } },
+    ]);
+  });
 }
 
 export async function getBomAction(bomId: unknown) {
-  return run(
-    "bom:read",
-    async () => Bom.findById(objectId.parse(bomId)).lean(),
-    () => getDemoBom(objectId.parse(bomId)),
-  );
+  return run("bom:read", async () => Bom.findById(objectId.parse(bomId)).lean());
 }
 
 export async function createBomDraftAction(outputItemId: unknown, lines: unknown, note?: unknown) {
@@ -91,27 +76,15 @@ export async function activateBomAction(bomId: unknown) {
 }
 
 export async function whereUsedAction(itemId: unknown) {
-  return run(
-    "bom:read",
-    async () => getWhereUsed(objectId.parse(itemId)),
-    () => getDemoWhereUsed(objectId.parse(itemId)),
-  );
+  return run("bom:read", async () => getWhereUsed(objectId.parse(itemId)));
 }
 
 /** Preview of the fully exploded requirement (down to raw materials) for N finished products */
 export async function explodePreviewAction(productId: unknown, quantity: unknown) {
-  return run(
-    "bom:read",
-    async () => fillByBom(objectId.parse(productId), qty.parse(quantity)),
-    () => getDemoFillByBom(objectId.parse(productId), qty.parse(quantity)),
-  );
+  return run("bom:read", async () => fillByBom(objectId.parse(productId), qty.parse(quantity)));
 }
 
 /** Multi-level tree of a BOM for the detail screen */
 export async function bomTreeAction(bomId: unknown) {
-  return run(
-    "bom:read",
-    async () => getBomTree(objectId.parse(bomId)),
-    () => getDemoBomTree(objectId.parse(bomId)),
-  );
+  return run("bom:read", async () => getBomTree(objectId.parse(bomId)));
 }

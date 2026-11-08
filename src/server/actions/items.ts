@@ -3,23 +3,14 @@
 import { run } from "@/server/lib/action";
 import { createItem, listItems, setItemActive, updateItem } from "@/server/lib/item-service";
 import { itemCreateSchema, itemFilterSchema, itemUpdateSchema, objectId } from "@/server/lib/schemas";
-import { getDemoItem, getDemoItems } from "@/server/lib/warehouse-demo";
 import { Item } from "@/server/models/item";
 
 export async function listItemsAction(input: unknown = {}) {
-  return run(
-    "item:read",
-    async () => listItems(itemFilterSchema.parse(input)),
-    () => getDemoItems(itemFilterSchema.parse(input)),
-  );
+  return run("item:read", async () => listItems(itemFilterSchema.parse(input)));
 }
 
 export async function getItemAction(itemId: unknown) {
-  return run(
-    "item:read",
-    async () => Item.findById(objectId.parse(itemId)).lean(),
-    () => getDemoItem(objectId.parse(itemId)),
-  );
+  return run("item:read", async () => Item.findById(objectId.parse(itemId)).lean());
 }
 
 export async function createItemAction(input: unknown) {
