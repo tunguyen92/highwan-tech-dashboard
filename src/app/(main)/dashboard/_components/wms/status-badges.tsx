@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "cn";
-
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/i18n/provider";
 import {
@@ -14,17 +12,20 @@ import {
 } from "@/lib/wms/constants";
 import type { ReconStatus } from "@/lib/wms/types";
 
-const green =
-  "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300";
-const amber =
-  "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/15 dark:text-amber-300";
+export const successBadgeClassName = "border-status-success-border bg-status-success text-status-success-foreground";
+const amberBadgeClassName = "border-status-warning-border bg-status-warning text-status-warning-foreground";
+const itemTypeBadgeClassName: Record<ItemType, string> = {
+  MATERIAL: "border-status-info-border bg-status-info text-status-info-foreground",
+  SEMI: amberBadgeClassName,
+  PRODUCT: successBadgeClassName,
+};
 
 export function VoucherStatusBadge({ status }: { status: VoucherStatus }) {
   const t = useT();
   if (status === "CANCELLED") return <Badge variant="destructive">{t(VOUCHER_STATUS_LABEL[status])}</Badge>;
   if (status === "CONFIRMED")
     return (
-      <Badge variant="outline" className={green}>
+      <Badge variant="outline" className={successBadgeClassName}>
         {t(VOUCHER_STATUS_LABEL[status])}
       </Badge>
     );
@@ -35,7 +36,7 @@ export function BomStatusBadge({ status }: { status: BomStatus }) {
   const t = useT();
   if (status === "ACTIVE")
     return (
-      <Badge variant="outline" className={green}>
+      <Badge variant="outline" className={successBadgeClassName}>
         {t(BOM_STATUS_LABEL[status])}
       </Badge>
     );
@@ -45,7 +46,7 @@ export function BomStatusBadge({ status }: { status: BomStatus }) {
 export function ItemTypeBadge({ type }: { type: ItemType }) {
   const t = useT();
   return (
-    <Badge variant="outline" className={cn(type === "SEMI" && amber)}>
+    <Badge variant="outline" className={itemTypeBadgeClassName[type]}>
       {t(ITEM_TYPE_LABEL[type])}
     </Badge>
   );
@@ -63,12 +64,12 @@ export function ReconStatusBadge({ status }: { status: ReconStatus }) {
   if (status === "OVER" || status === "NO_NORM") return <Badge variant="destructive">{t(RECON_LABEL[status])}</Badge>;
   if (status === "UNDER")
     return (
-      <Badge variant="outline" className={amber}>
+      <Badge variant="outline" className={amberBadgeClassName}>
         {t(RECON_LABEL[status])}
       </Badge>
     );
   return (
-    <Badge variant="outline" className={green}>
+    <Badge variant="outline" className={successBadgeClassName}>
       {t(RECON_LABEL[status])}
     </Badge>
   );

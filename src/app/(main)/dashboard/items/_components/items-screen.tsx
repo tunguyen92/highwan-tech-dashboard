@@ -25,7 +25,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useT } from "@/lib/i18n/provider";
 import { unwrap, unwrapAs } from "@/lib/wms/action-client";
 import type { ItemType } from "@/lib/wms/constants";
-import { formatQty } from "@/lib/wms/format";
+import { formatPrice, formatQty } from "@/lib/wms/format";
 import type { ItemDTO } from "@/lib/wms/types";
 import { useDebounced, useLoad } from "@/lib/wms/use-load";
 import { listItemsPageAction, setItemActiveAction } from "@/server/actions/items";
@@ -94,7 +94,7 @@ export function ItemsScreen() {
               </InputGroupAddon>
               <InputGroupInput
                 className="h-7"
-                placeholder={t("Search by code or name...")}
+                placeholder={t("Search by code, name, or spec...")}
                 value={q}
                 onChange={(event) => {
                   setQ(event.target.value);
@@ -149,14 +149,15 @@ export function ItemsScreen() {
               <TableHead>{t("Production line")}</TableHead>
               <TableHead>{t("Type")}</TableHead>
               <TableHead>{t("UoM")}</TableHead>
+              <TableHead className="text-right">{t("Price (VND)")}</TableHead>
               <TableHead className="text-right">{t("Minimum stock")}</TableHead>
               <TableHead>{t("Notes")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <LoadingRows columns={9} /> : null}
-            {!loading && rows.length === 0 ? <EmptyRow columns={9} text={t("No items.")} /> : null}
+            {loading ? <LoadingRows columns={10} /> : null}
+            {!loading && rows.length === 0 ? <EmptyRow columns={10} text={t("No items.")} /> : null}
             {!loading &&
               rows.map((item) => (
                 <TableRow key={item._id} className={item.isActive ? "" : "opacity-60"}>
@@ -168,6 +169,9 @@ export function ItemsScreen() {
                     <ItemTypeBadge type={item.type} />
                   </TableCell>
                   <TableCell>{item.unit}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {item.price ? formatPrice(item.price) : "-"}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {item.isStocked ? formatQty(item.minStock) : "-"}
                   </TableCell>

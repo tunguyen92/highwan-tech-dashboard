@@ -19,9 +19,9 @@ import type { DataTableFeatures } from "@/lib/data-table-features";
 import { currency, number, type Product, type ProductStatus } from "./data";
 
 const statusColors: Record<ProductStatus, string> = {
-  Active: "bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
-  Draft: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-  Archived: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  Active: "border-status-success-border bg-status-success text-status-success-foreground",
+  Draft: "border-status-neutral-border bg-status-neutral text-status-neutral-foreground",
+  Archived: "border-status-neutral-border bg-status-neutral text-status-neutral-foreground",
 };
 
 export function createProductsColumns(
@@ -111,10 +111,10 @@ export function createProductsColumns(
         <Badge
           variant="secondary"
           className={cn("rounded-md tabular-nums", {
-            "bg-rose-200 text-rose-800 dark:bg-rose-950 dark:text-rose-400": row.original.stock === 0,
-            "bg-orange-200 text-orange-800 dark:bg-orange-950 dark:text-orange-400":
+            "border-status-danger-border bg-status-danger text-status-danger-foreground": row.original.stock === 0,
+            "border-status-warning-border bg-status-warning text-status-warning-foreground":
               row.original.stock > 0 && row.original.stock <= 10,
-            "bg-sky-200 text-sky-800 dark:bg-sky-950 dark:text-sky-400": row.original.stock > 10,
+            "border-status-info-border bg-status-info text-status-info-foreground": row.original.stock > 10,
           })}
         >
           {row.original.stock === 0 && "Out of stock"}

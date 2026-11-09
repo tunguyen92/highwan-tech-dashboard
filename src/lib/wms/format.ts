@@ -33,6 +33,29 @@ export function formatQty(value: string | number | null | undefined): string {
   return `${negative ? "-" : ""}${grouped}${frac ? `${decimal}${frac}` : ""}`;
 }
 
+/** Prices use dots for grouping and commas for fractional digits in every locale. */
+export function formatPrice(value: string | null | undefined): string {
+  if (!value) return "";
+  const [integer, fraction] = value.split(".");
+  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return fraction === undefined ? grouped : `${grouped},${fraction}`;
+}
+
+/** Converts grouped price input back to the canonical dot-decimal string used by the API. */
+export function parsePriceInput(value: string): string {
+  const cleaned = value.replace(/[^\d.,]/g, "");
+  if (!cleaned) return "";
+
+  const separatorIndex = Math.max(cleaned.lastIndexOf("."), cleaned.lastIndexOf(","));
+  if (separatorIndex === -1) return cleaned;
+
+  const fraction = cleaned.slice(separatorIndex + 1).replace(/\D/g, "");
+  if (fraction.length > 2) return cleaned.replace(/\D/g, "");
+
+  const integer = cleaned.slice(0, separatorIndex).replace(/\D/g, "");
+  return `${integer || (fraction ? "0" : "")}.${fraction}`;
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "";
   return new Date(value).toLocaleDateString(DATE_LOCALE[currentLocale], { timeZone: TZ });

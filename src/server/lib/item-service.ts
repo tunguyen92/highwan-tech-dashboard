@@ -31,7 +31,7 @@ function buildItemFilter(f: ItemListFilter) {
   if (!f.includeInactive) filter.isActive = true;
   if (f.q) {
     const re = new RegExp(escapeRegex(f.q), "i");
-    filter.$or = [{ code: re }, { name: re }];
+    filter.$or = [{ code: re }, { name: re }, { spec: re }];
   }
   return filter;
 }
@@ -55,7 +55,11 @@ export async function listItemsPage(f: ItemListFilter & { page: number; pageSize
 }
 
 export async function createItem(input: any) {
-  return Item.create({ ...input, minStock: D(input.minStock ?? "0") });
+  return Item.create({
+    ...input,
+    minStock: D(input.minStock ?? "0"),
+    price: input.price === undefined ? undefined : D(input.price),
+  });
 }
 
 export async function updateItem(itemId: string, patch: Record<string, any>) {
@@ -68,6 +72,7 @@ export async function updateItem(itemId: string, patch: Record<string, any>) {
   if (changesLocked && (await isItemReferenced(item._id))) throw new Error("ITEM_FIELD_LOCKED");
 
   if (patch.minStock !== undefined) patch.minStock = D(patch.minStock);
+  if (patch.price !== undefined) patch.price = D(patch.price);
   item.set(patch);
   await item.save();
   return item.toObject();

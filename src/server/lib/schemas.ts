@@ -38,6 +38,12 @@ export const itemCreateSchema = z.object({
   name: z.string().trim().min(1).max(200),
   spec: z.string().trim().max(100).optional(),
   productionLine: z.string().trim().max(100).optional(),
+  price: z
+    .string()
+    .trim()
+    .max(100)
+    .regex(/^\d+(\.\d{1,2})?$/)
+    .optional(),
   type: enumOf(ITEM_TYPE),
   unit: z.string().trim().min(1).max(20),
   decimalPlaces: z.number().int().min(0).max(QTY_MAX_DECIMAL_PLACES).default(0),

@@ -11,6 +11,7 @@ export interface IItem {
   name: string;
   spec?: string;
   productionLine?: string;
+  price?: Types.Decimal128;
   type: ItemType;
   unit: string; // The Only base unit, used by BOM, vouchers and inventory
   decimalPlaces: number; // 0 = counted pieces; 2-3 = meters, kg
@@ -30,6 +31,7 @@ const ItemSchema = new Schema<IItem>(
     name: { type: String, required: true, trim: true },
     spec: { type: String, trim: true, maxlength: 100 },
     productionLine: { type: String, trim: true, maxlength: 100 },
+    price: { type: Schema.Types.Decimal128 },
     type: { type: String, enum: Object.values(ITEM_TYPE), required: true },
     unit: { type: String, required: true, trim: true },
     decimalPlaces: { type: Number, default: 0, min: 0, max: QTY_MAX_DECIMAL_PLACES },

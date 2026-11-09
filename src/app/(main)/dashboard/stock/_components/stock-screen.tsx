@@ -21,6 +21,7 @@ import { useDebounced, useLoad } from "@/lib/wms/use-load";
 import { currentStockAction, currentStockPageAction } from "@/server/actions/reports";
 
 import { PageCard, tableClass } from "../../_components/wms/page-card";
+import { successBadgeClassName } from "../../_components/wms/status-badges";
 import { EmptyRow, LoadingRows } from "../../_components/wms/table-states";
 import { StockCardSheet } from "./stock-card-sheet";
 
@@ -95,7 +96,7 @@ export function StockScreen() {
               </InputGroupAddon>
               <InputGroupInput
                 className="h-7"
-                placeholder={t("Search by code or name...")}
+                placeholder={t("Search by code, name, or spec...")}
                 value={q}
                 onChange={(event) => {
                   setQ(event.target.value);
@@ -176,7 +177,9 @@ export function StockScreen() {
                     {row.isLow ? (
                       <Badge variant="destructive">{t("Below minimum")}</Badge>
                     ) : (
-                      <Badge variant="outline">{t("Sufficient")}</Badge>
+                      <Badge variant="outline" className={successBadgeClassName}>
+                        {t("Sufficient")}
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>

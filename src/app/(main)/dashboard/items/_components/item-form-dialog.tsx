@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
 import { ITEM_TYPE_LABEL, type ItemType } from "@/lib/wms/constants";
+import { formatPrice, parsePriceInput } from "@/lib/wms/format";
 import type { ItemDTO } from "@/lib/wms/types";
 import { createItemAction, updateItemAction } from "@/server/actions/items";
 
@@ -29,6 +30,7 @@ import { QtyInput } from "../../_components/wms/qty-input";
 
 const blankToUndefined = (value: string) => (value.trim() === "" ? undefined : value.trim());
 const ITEM_UNITS = ["BOTTLE", "BOX", "EA", "KG", "M", "PRODUCT", "ROLL", "SET", "TIN"];
+const PRODUCTION_LINES = ["BIDET", "AL", "LW ASSY", "LW-BT"];
 
 /** Create / edit one item. Mounted with a `key`, so its state always starts from the given item. */
 export function ItemFormDialog({
@@ -45,6 +47,7 @@ export function ItemFormDialog({
   const [name, setName] = useState(item?.name ?? "");
   const [spec, setSpec] = useState(item?.spec ?? "");
   const [productionLine, setProductionLine] = useState(item?.productionLine ?? "");
+  const [price, setPrice] = useState(item?.price ?? "");
   const [type, setType] = useState<ItemType>(item?.type ?? "MATERIAL");
   const [unit, setUnit] = useState(item?.unit ?? "");
   const [decimalPlaces, setDecimalPlaces] = useState(String(item?.decimalPlaces ?? 0));
@@ -53,6 +56,7 @@ export function ItemFormDialog({
   const [packSize, setPackSize] = useState(item?.packSize ?? "");
   const [note, setNote] = useState(item?.note ?? "");
   const [busy, setBusy] = useState(false);
+  const priceInputRef = useRef<HTMLInputElement>(null);
 
   const canSubmit = code.trim() !== "" && name.trim() !== "" && unit.trim() !== "";
 
@@ -63,6 +67,7 @@ export function ItemFormDialog({
       name: name.trim(),
       spec: blankToUndefined(spec),
       productionLine: blankToUndefined(productionLine),
+      price: blankToUndefined(price),
       type,
       unit: unit.trim(),
       decimalPlaces: Number(decimalPlaces),
@@ -129,12 +134,20 @@ export function ItemFormDialog({
 
           <Field>
             <FieldLabel htmlFor="item-production-line">{t("Production line")}</FieldLabel>
-            <Input
-              id="item-production-line"
-              value={productionLine}
-              onChange={(e) => setProductionLine(e.target.value)}
-              maxLength={100}
-            />
+            <Select value={productionLine} onValueChange={setProductionLine}>
+              <SelectTrigger id="item-production-line" className="w-full">
+                <SelectValue placeholder={t("Select production line")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {PRODUCTION_LINES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -190,6 +203,24 @@ export function ItemFormDialog({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="item-price">{t("Price (VND)")}</FieldLabel>
+              <Input
+                id="item-price"
+                inputMode="decimal"
+                autoComplete="off"
+                ref={priceInputRef}
+                value={formatPrice(price)}
+                onChange={(event) => {
+                  const input = event.currentTarget.value;
+                  const caret = event.currentTarget.selectionStart ?? input.length;
+                  const nextPrice = parsePriceInput(input);
+                  const nextCaret = formatPrice(parsePriceInput(input.slice(0, caret))).length;
+                  setPrice(nextPrice);
+                  requestAnimationFrame(() => priceInputRef.current?.setSelectionRange(nextCaret, nextCaret));
+                }}
+              />
+            </Field>
             <Field>
               <FieldLabel htmlFor="item-pack">{t("Packaging (reference only)")}</FieldLabel>
               <Input

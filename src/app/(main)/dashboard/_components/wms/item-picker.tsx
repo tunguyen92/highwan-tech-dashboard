@@ -67,14 +67,14 @@ export function ItemPicker({
       </PopoverTrigger>
       <PopoverContent className="w-[min(380px,90vw)] p-0" align="start">
         <Command>
-          <CommandInput placeholder={t("Search by code or name...")} />
+          <CommandInput placeholder={t("Search by code, name, or spec...")} />
           <CommandList>
             <CommandEmpty>{t("No item found.")}</CommandEmpty>
             <CommandGroup>
               {options.map((item) => (
                 <CommandItem
                   key={item._id}
-                  value={`${item.code} ${item.name}`}
+                  value={`${item.code} ${item.name} ${item.spec ?? ""}`}
                   onSelect={() => {
                     onChange(item);
                     setOpen(false);

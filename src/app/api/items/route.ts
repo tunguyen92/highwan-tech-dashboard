@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     ...item,
     _id: String(item._id),
     minStock: item.minStock.toString(),
+    price: item.price?.toString(),
   }));
 
   return NextResponse.json({ ...result, rows });

@@ -6,6 +6,7 @@ export type ItemDTO = {
   name: string;
   spec?: string;
   productionLine?: string;
+  price?: string;
   type: ItemType;
   unit: string;
   decimalPlaces: number;

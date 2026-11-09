@@ -31,7 +31,7 @@ function currentStockBaseStages(f: CurrentStockFilter): PipelineStage[] {
   if (f.type) match.type = f.type;
   if (f.q) {
     const re = new RegExp(f.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
-    match.$or = [{ code: re }, { name: re }];
+    match.$or = [{ code: re }, { name: re }, { spec: re }];
   }
 
   const zero = { $toDecimal: 0 };

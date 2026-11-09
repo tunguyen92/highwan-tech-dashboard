@@ -10,8 +10,10 @@ export const vi: Record<string, string> = {
   "Enter a reason (required)": "Nhập lý do (bắt buộc)",
   Close: "Đóng",
   "Select an item...": "Chọn mã hàng...",
-  "Search by code or name...": "Tìm theo mã hoặc tên...",
+  "Search by code, name, or spec...": "Tìm theo mã, tên hoặc quy cách...",
+  "Price (VND)": "Giá (VNĐ)",
   "Production line": "Chuyền sản xuất",
+  "Select production line": "Chọn chuyền sản xuất",
   "Search by username or name...": "Tìm theo tên đăng nhập hoặc họ tên...",
   "No item found.": "Không tìm thấy mã hàng.",
   Page: "Trang",
@@ -223,8 +225,8 @@ export const vi: Record<string, string> = {
   'because they have no active BOM. Materials of these products appear as "No BOM" if they were issued.':
     'vì chưa có định mức đang áp dụng. Nguyên liệu của các thành phần này sẽ hiện là "Không có định mức" nếu đã xuất.',
   "No data for this month.": "Không có số liệu trong tháng này.",
-  "Requirement = (finished products received in the month, net of cancellations) × active BOM, expanded across all levels.":
-    "Nhu cầu = (thành phần nhập trong tháng, đã trừ phần hủy) × định mức đang áp dụng, khai triển mọi cấp.",
+  "Requirement = (finished products received in the month, net of cancellations) * active BOM, expanded across all levels.":
+    "Nhu cầu = (thành phần nhập trong tháng, đã trừ phần hủy) * định mức đang áp dụng, khai triển mọi cấp.",
   'Only "Issue to production" and "Receive finished products" vouchers count. Items marked "Not reconciled" are ignored.':
     'Chỉ tính phiếu "Xuất sản xuất" và "Nhập thành phẩm". Mã đánh dấu "Không đối chiếu" bị bỏ qua.',
   "Work in progress on the line at month end (materials issued but finished products not yet received) skews the figures temporarily and is made up the following month.":
