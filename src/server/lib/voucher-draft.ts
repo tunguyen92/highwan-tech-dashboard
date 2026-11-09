@@ -1,3 +1,4 @@
+import type { VoucherRemarkUnit } from "@/lib/wms/constants";
 import { Item } from "@/server/models/item";
 import { VOUCHER_RULES, VOUCHER_STATUS, VOUCHER_TYPE, Voucher, type VoucherType } from "@/server/models/voucher";
 
@@ -6,10 +7,18 @@ import { D, decimalsOf, isPositive, vnPeriod } from "./decimal";
 export type DraftInput = {
   type: VoucherType;
   voucherDate: Date;
+  documentNumber?: string;
   batchNote?: string;
   note?: string;
   productionRef?: { productId: string; quantity: string | number };
-  lines: { itemId: string; quantity: string | number; normQuantity?: string | number; note?: string }[];
+  lines: {
+    itemId: string;
+    quantity: string | number;
+    normQuantity?: string | number;
+    remarkQuantity?: string | number;
+    remarkUnit?: VoucherRemarkUnit;
+    note?: string;
+  }[];
 };
 
 /** Builds voucher data, snapshots item info into each line and validates early so users see errors when saving a draft */
@@ -42,6 +51,9 @@ async function build(input: DraftInput) {
     const qty = D(l.quantity);
     if (!isPositive(qty)) throw new Error(`QTY_MUST_BE_POSITIVE:${it.code}`);
     if (decimalsOf(qty) > it.decimalPlaces) throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+    const remarkQuantity = l.remarkQuantity !== undefined ? D(l.remarkQuantity) : undefined;
+    if (remarkQuantity && !isPositive(remarkQuantity)) throw new Error(`REMARK_QTY_MUST_BE_POSITIVE:${it.code}`);
+    if (remarkQuantity && !l.remarkUnit) throw new Error(`REMARK_UNIT_REQUIRED:${it.code}`);
     return {
       lineNo: idx + 1,
       itemId: it._id,
@@ -50,6 +62,8 @@ async function build(input: DraftInput) {
       unit: it.unit,
       quantity: qty,
       normQuantity: l.normQuantity !== undefined ? D(l.normQuantity) : undefined,
+      remarkQuantity,
+      remarkUnit: l.remarkUnit,
       note: l.note,
     };
   });
@@ -58,6 +72,7 @@ async function build(input: DraftInput) {
     type: input.type,
     direction: rule.direction,
     voucherDate: input.voucherDate,
+    documentNumber: input.documentNumber,
     period: vnPeriod(input.voucherDate),
     batchNote: input.batchNote,
     note: input.note,
@@ -82,9 +97,12 @@ export async function createDraftVoucher(input: DraftInput, userId: string) {
 /** Only editable while DRAFT (the condition is part of the update itself, so a voucher that was just confirmed is never overwritten) */
 export async function updateDraftVoucher(voucherId: string, input: DraftInput) {
   const data = await build(input);
+  const unset: Record<string, string> = {};
+  if (!data.productionRef) unset.productionRef = "";
+  if (!data.documentNumber) unset.documentNumber = "";
   const res = await Voucher.updateOne(
     { _id: voucherId, status: VOUCHER_STATUS.DRAFT },
-    { $set: data, ...(data.productionRef ? {} : { $unset: { productionRef: "" } }) },
+    { $set: data, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
   );
   if (res.matchedCount === 0) throw new Error("VOUCHER_NOT_EDITABLE");
 }

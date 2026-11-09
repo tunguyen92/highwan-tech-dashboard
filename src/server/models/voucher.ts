@@ -1,6 +1,14 @@
 import { type Model, model, models, Schema, type Types } from "mongoose";
 
-import { VOUCHER_RULES, VOUCHER_STATUS, VOUCHER_TYPE, type VoucherStatus, type VoucherType } from "@/lib/wms/constants";
+import {
+  VOUCHER_REMARK_UNIT,
+  VOUCHER_RULES,
+  VOUCHER_STATUS,
+  VOUCHER_TYPE,
+  type VoucherRemarkUnit,
+  type VoucherStatus,
+  type VoucherType,
+} from "@/lib/wms/constants";
 import { vnPeriod } from "@/server/lib/decimal";
 
 export type { VoucherStatus, VoucherType };
@@ -14,12 +22,15 @@ export interface IVoucherLine {
   unit: string; // snapshot
   quantity: Types.Decimal128; // Actual quantity in/out (> 0)
   normQuantity?: Types.Decimal128; // Norm at the time "Fill by norm" was used (snapshot)
+  remarkQuantity?: Types.Decimal128;
+  remarkUnit?: VoucherRemarkUnit;
   note?: string;
 }
 
 export interface IVoucher {
   _id: Types.ObjectId;
   voucherNo?: string; // Assigned on confirm: PN-2026-00012
+  documentNumber?: string;
   type: VoucherType;
   direction: "IN" | "OUT"; // Derived from type
   status: VoucherStatus;
@@ -48,6 +59,8 @@ const LineSchema = new Schema<IVoucherLine>(
     unit: { type: String, required: true },
     quantity: { type: Schema.Types.Decimal128, required: true },
     normQuantity: { type: Schema.Types.Decimal128 },
+    remarkQuantity: { type: Schema.Types.Decimal128 },
+    remarkUnit: { type: String, enum: Object.values(VOUCHER_REMARK_UNIT) },
     note: { type: String, trim: true },
   },
   { _id: false },
@@ -56,6 +69,7 @@ const LineSchema = new Schema<IVoucherLine>(
 const VoucherSchema = new Schema<IVoucher>(
   {
     voucherNo: { type: String },
+    documentNumber: { type: String, trim: true, maxlength: 100 },
     type: { type: String, enum: Object.values(VOUCHER_TYPE), required: true },
     direction: { type: String, enum: ["IN", "OUT"], required: true },
     status: { type: String, enum: Object.values(VOUCHER_STATUS), default: VOUCHER_STATUS.DRAFT },

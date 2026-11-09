@@ -310,6 +310,12 @@ html:has([data-landing-page]) {
   display: none;
 }
 
+[data-voucher-preview] .voucher-paper {
+  width: 11in;
+  min-width: 11in;
+  min-height: 8.5in;
+}
+
 @media print {
   @page {
     size: Letter;
@@ -348,5 +354,27 @@ html:has([data-landing-page]) {
   [data-print-root] [data-print-paper] * {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  @page voucher-landscape {
+    size: Letter landscape;
+    margin: 0;
+  }
+
+  html:has(body > [data-print-root][data-print-landscape]),
+  body:has(> [data-print-root][data-print-landscape]) {
+    width: 11in !important;
+    height: 8.5in !important;
+  }
+
+  [data-print-root][data-print-landscape] {
+    page: voucher-landscape;
+    width: 11in !important;
+    height: 8.5in !important;
+  }
+
+  [data-print-root][data-print-landscape] [data-print-paper] {
+    width: 11in !important;
+    height: 8.5in !important;
   }
 }

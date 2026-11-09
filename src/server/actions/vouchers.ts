@@ -23,7 +23,10 @@ export async function listVouchersAction(input: unknown = {}) {
     if (f.type) match.type = f.type;
     if (f.status) match.status = f.status;
     if (f.period) match.period = f.period;
-    if (f.search) match.voucherNo = { $regex: `^${f.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, $options: "i" };
+    if (f.search) {
+      const search = { $regex: `^${f.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, $options: "i" };
+      match.$or = [{ voucherNo: search }, { documentNumber: search }];
+    }
 
     const [rows, total] = await Promise.all([
       Voucher.aggregate([

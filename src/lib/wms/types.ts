@@ -1,4 +1,4 @@
-import type { BomStatus, ItemType, Role, VoucherStatus, VoucherType } from "./constants";
+import type { BomStatus, ItemType, Role, VoucherRemarkUnit, VoucherStatus, VoucherType } from "./constants";
 
 export type ItemDTO = {
   _id: string;
@@ -109,6 +109,7 @@ export type FillByBomDTO = {
 export type VoucherListRow = {
   _id: string;
   voucherNo: string;
+  documentNumber?: string;
   type: VoucherType;
   direction: "IN" | "OUT";
   status: VoucherStatus;
@@ -127,12 +128,15 @@ export type VoucherLineDTO = {
   unit: string;
   quantity: string;
   normQuantity?: string;
+  remarkQuantity?: string;
+  remarkUnit?: VoucherRemarkUnit;
   note?: string;
 };
 
 export type VoucherDTO = {
   _id: string;
   voucherNo?: string;
+  documentNumber?: string;
   type: VoucherType;
   direction: "IN" | "OUT";
   status: VoucherStatus;

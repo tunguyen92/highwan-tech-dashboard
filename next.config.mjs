@@ -3,10 +3,7 @@ const nextConfig = {
   reactCompiler: true,
   serverExternalPackages: ["mongoose", "bcryptjs"],
   compiler: {
-    removeConsole:
-      process.env.NODE_ENV === "production"
-        ? { exclude: ["warn", "error"] }
-        : false,
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["warn", "error"] } : false,
   },
   async redirects() {
     return [

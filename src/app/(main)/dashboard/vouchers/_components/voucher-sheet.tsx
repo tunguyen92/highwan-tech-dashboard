@@ -16,7 +16,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useT } from "@/lib/i18n/provider";
 import { unwrap, unwrapAs } from "@/lib/wms/action-client";
-import { VOUCHER_RULES, VOUCHER_TYPE_LABEL, type VoucherType } from "@/lib/wms/constants";
+import {
+  VOUCHER_REMARK_UNIT,
+  VOUCHER_RULES,
+  VOUCHER_TYPE_LABEL,
+  type VoucherRemarkUnit,
+  type VoucherType,
+} from "@/lib/wms/constants";
 import { formatDateTime, formatQty, todayYmd, toYmd, ymdToDate } from "@/lib/wms/format";
 import type { FillByBomDTO, VoucherDTO } from "@/lib/wms/types";
 import { useLoad } from "@/lib/wms/use-load";
@@ -38,7 +44,15 @@ import { VoucherStatusBadge } from "../../_components/wms/status-badges";
 import { useItems } from "../../_components/wms/use-items";
 import { useCan } from "../../_components/wms/user-context";
 
-type LineState = { key: number; itemId: string | null; quantity: string; normQuantity?: string; note: string };
+type LineState = {
+  key: number;
+  itemId: string | null;
+  quantity: string;
+  normQuantity?: string;
+  remarkQuantity: string;
+  remarkUnit: VoucherRemarkUnit;
+  note: string;
+};
 type ProductionRef = { productId: string; quantity: string };
 
 const exceedsNorm = (quantity: string, norm?: string) => {
@@ -70,6 +84,7 @@ export function VoucherSheet({
   const [currentId, setCurrentId] = useState(voucherId);
   const [type, setType] = useState<VoucherType>(direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCTION");
   const [date, setDate] = useState(todayYmd());
+  const [documentNumber, setDocumentNumber] = useState("");
   const [batchNote, setBatchNote] = useState("");
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<LineState[]>([]);
@@ -94,6 +109,7 @@ export function VoucherSheet({
     if (!loaded) return;
     setType(loaded.type);
     setDate(toYmd(loaded.voucherDate));
+    setDocumentNumber(loaded.documentNumber ?? "");
     setBatchNote(loaded.batchNote ?? "");
     setNote(loaded.note ?? "");
     setProductionRef(
@@ -107,6 +123,8 @@ export function VoucherSheet({
         itemId: line.itemId,
         quantity: line.quantity,
         normQuantity: line.normQuantity,
+        remarkQuantity: line.remarkQuantity ?? "",
+        remarkUnit: line.remarkUnit ?? VOUCHER_REMARK_UNIT.BOX,
         note: line.note ?? "",
       })),
     );
@@ -149,7 +167,17 @@ export function VoucherSheet({
               : line,
           );
         } else {
-          next = [...next, { key: nextKey.current++, itemId: item._id, quantity, note: "" }];
+          next = [
+            ...next,
+            {
+              key: nextKey.current++,
+              itemId: item._id,
+              quantity,
+              remarkQuantity: "",
+              remarkUnit: VOUCHER_REMARK_UNIT.BOX,
+              note: "",
+            },
+          ];
         }
       }
       return next;
@@ -168,6 +196,8 @@ export function VoucherSheet({
         itemId: line.itemId,
         quantity: line.quantity,
         normQuantity: line.normQuantity,
+        remarkQuantity: "",
+        remarkUnit: VOUCHER_REMARK_UNIT.BOX,
         note: "",
       })),
     );
@@ -196,6 +226,7 @@ export function VoucherSheet({
       saveDraftAction(currentId, {
         type,
         voucherDate: ymdToDate(date).toISOString(),
+        documentNumber: documentNumber.trim() || undefined,
         batchNote: batchNote.trim() === "" ? undefined : batchNote.trim(),
         note: note.trim() === "" ? undefined : note.trim(),
         productionRef: type === "EXPORT_PRODUCTION" && productionRef ? productionRef : undefined,
@@ -203,6 +234,8 @@ export function VoucherSheet({
           itemId: line.itemId!,
           quantity: line.quantity,
           normQuantity: line.normQuantity,
+          remarkQuantity: line.remarkQuantity.trim() || undefined,
+          remarkUnit: line.remarkQuantity.trim() ? line.remarkUnit : undefined,
           note: line.note.trim() === "" ? undefined : line.note.trim(),
         })),
       }),
@@ -281,7 +314,7 @@ export function VoucherSheet({
               </div>
             ) : null}
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <Field>
                 <FieldLabel htmlFor="v-type">{t("Voucher type")}</FieldLabel>
                 <Select value={type} onValueChange={(value) => changeType(value as VoucherType)} disabled={!editable}>
@@ -302,6 +335,16 @@ export function VoucherSheet({
               <Field>
                 <FieldLabel htmlFor="v-date">{t("Voucher date")}</FieldLabel>
                 <CalendarDatePicker id="v-date" value={date} onChange={setDate} disabled={!editable} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="v-document-number">{t("Document number")}</FieldLabel>
+                <Input
+                  id="v-document-number"
+                  value={documentNumber}
+                  disabled={!editable}
+                  maxLength={100}
+                  onChange={(e) => setDocumentNumber(e.target.value)}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="v-batch">{t("Batch reference (optional)")}</FieldLabel>
@@ -368,7 +411,14 @@ export function VoucherSheet({
                   onClick={() =>
                     setLines((current) => [
                       ...current,
-                      { key: nextKey.current++, itemId: null, quantity: "", note: "" },
+                      {
+                        key: nextKey.current++,
+                        itemId: null,
+                        quantity: "",
+                        remarkQuantity: "",
+                        remarkUnit: VOUCHER_REMARK_UNIT.BOX,
+                        note: "",
+                      },
                     ])
                   }
                 >
@@ -390,13 +440,14 @@ export function VoucherSheet({
                     <TableHead className="w-36 text-right">{t("Quantity")}</TableHead>
                     <TableHead className="w-32 text-right">{t("Norm")}</TableHead>
                     <TableHead>{t("Notes")}</TableHead>
+                    <TableHead className="w-48">{t("Remark")}</TableHead>
                     {editable ? <TableHead className="w-10" /> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lines.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-muted-foreground h-20 text-center">
+                      <TableCell colSpan={editable ? 8 : 7} className="text-muted-foreground h-20 text-center">
                         {t("No lines yet.")}
                       </TableCell>
                     </TableRow>
@@ -452,6 +503,40 @@ export function VoucherSheet({
                             />
                           ) : (
                             <span className="text-muted-foreground">{line.note}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editable ? (
+                            <div className="flex items-center gap-2">
+                              <QtyInput
+                                aria-label={`${t("Remark quantity")} ${index + 1}`}
+                                value={line.remarkQuantity}
+                                onChange={(remarkQuantity) => patchLine(line.key, { remarkQuantity })}
+                              />
+                              <Select
+                                value={line.remarkUnit}
+                                onValueChange={(value) =>
+                                  patchLine(line.key, { remarkUnit: value as VoucherRemarkUnit })
+                                }
+                              >
+                                <SelectTrigger className="w-24" aria-label={`${t("Remark package")} ${index + 1}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    {Object.values(VOUCHER_REMARK_UNIT).map((unit) => (
+                                      <SelectItem key={unit} value={unit}>
+                                        {unit}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {line.remarkQuantity ? `${formatQty(line.remarkQuantity)} ${line.remarkUnit}` : ""}
+                            </span>
                           )}
                         </TableCell>
                         {editable ? (

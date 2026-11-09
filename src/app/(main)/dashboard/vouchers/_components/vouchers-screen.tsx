@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { Plus, Search } from "lucide-react";
 
 import { CalendarDatePicker } from "@/components/calendar-date-picker";
@@ -34,6 +36,7 @@ type ListResult = { rows: VoucherListRow[]; total: number; page: number; pageSiz
 const PAGE_SIZE = 20;
 
 export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
+  const router = useRouter();
   const t = useT();
   const canWrite = useCan("voucher:write");
   const isImport = direction === "IN";
@@ -95,7 +98,10 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
               />
             </InputGroup>
             {canWrite ? (
-              <Button size="sm" onClick={() => setSheet({ id: null })}>
+              <Button
+                size="sm"
+                onClick={() => router.push(`/dashboard/vouchers/${isImport ? "import" : "export"}/new`)}
+              >
                 <Plus /> {t("Create voucher")}
               </Button>
             ) : null}
@@ -187,7 +193,12 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
                       className="h-auto p-0 font-medium underline underline-offset-4"
                       onClick={() => setSheet({ id: row._id })}
                     >
-                      {row.voucherNo ?? t("(Draft)")}
+                      <span className="flex flex-col items-start">
+                        <span>{row.documentNumber ?? row.voucherNo ?? t("(Draft)")}</span>
+                        {row.documentNumber && row.voucherNo ? (
+                          <span className="text-muted-foreground text-xs">{row.voucherNo}</span>
+                        ) : null}
+                      </span>
                     </Button>
                   </TableCell>
                   <TableCell>{t(VOUCHER_TYPE_LABEL[row.type])}</TableCell>

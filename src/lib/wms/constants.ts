@@ -13,6 +13,12 @@ export const ITEM_TYPE_LABEL: Record<ItemType, string> = {
 
 export const QTY_MAX_DECIMAL_PLACES = 10;
 
+export const VOUCHER_REMARK_UNIT = {
+  BOX: "BOX",
+  BAG: "BAG",
+} as const;
+export type VoucherRemarkUnit = (typeof VOUCHER_REMARK_UNIT)[keyof typeof VOUCHER_REMARK_UNIT];
+
 export const BOM_STATUS = {
   DRAFT: "DRAFT",
   ACTIVE: "ACTIVE",

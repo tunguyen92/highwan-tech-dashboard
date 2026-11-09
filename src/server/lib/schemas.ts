@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-import { BOM_STATUS, ITEM_TYPE, QTY_MAX_DECIMAL_PLACES, ROLE, VOUCHER_STATUS, VOUCHER_TYPE } from "@/lib/wms/constants";
+import {
+  BOM_STATUS,
+  ITEM_TYPE,
+  QTY_MAX_DECIMAL_PLACES,
+  ROLE,
+  VOUCHER_REMARK_UNIT,
+  VOUCHER_STATUS,
+  VOUCHER_TYPE,
+} from "@/lib/wms/constants";
 
 // Note: files marked "use server" may only export async functions, so schemas live here.
 const enumOf = <T extends Record<string, string>>(o: T) => z.enum(Object.values(o) as [T[keyof T], ...T[keyof T][]]);
@@ -77,6 +85,7 @@ export const bomLinesSchema = z
 export const voucherDraftSchema = z.object({
   type: enumOf(VOUCHER_TYPE),
   voucherDate: z.coerce.date(),
+  documentNumber: z.string().trim().max(100).optional(),
   batchNote: z.string().trim().max(200).optional(),
   note: z.string().trim().max(1000).optional(),
   productionRef: z.object({ productId: objectId, quantity: qty }).optional(),
@@ -86,6 +95,8 @@ export const voucherDraftSchema = z.object({
         itemId: objectId,
         quantity: qty,
         normQuantity: qty.optional(),
+        remarkQuantity: qty.optional(),
+        remarkUnit: enumOf(VOUCHER_REMARK_UNIT).optional(),
         note: z.string().trim().max(300).optional(),
       }),
     )
