@@ -9,7 +9,7 @@ import { type Role, User } from "@/server/models/user";
 import { connectDB } from "./db";
 
 const COOKIE = "session";
-const SESSION_HOURS = 12;
+const SESSION_DAYS = 30;
 const MAX_FAILED_LOGINS = 5;
 const LOCK_MINUTES = 15;
 // Compared against when the username does not exist, so response time does not reveal valid usernames
@@ -30,7 +30,7 @@ export async function createSession(user: { _id: any; tokenVersion: number }) {
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(user._id))
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_HOURS}h`)
+    .setExpirationTime(`${SESSION_DAYS}d`)
     .sign(secret());
 
   (await cookies()).set(COOKIE, token, {
@@ -38,7 +38,7 @@ export async function createSession(user: { _id: any; tokenVersion: number }) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_HOURS * 3600,
+    maxAge: SESSION_DAYS * 24 * 60 * 60,
   });
 }
 

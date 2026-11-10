@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
+import { ROLE, type Role } from "@/lib/wms/constants";
 import { loginAction } from "@/server/actions/auth";
 
 export function LoginForm() {
@@ -24,10 +25,14 @@ export function LoginForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
-    const result = await unwrapAs<unknown>(loginAction({ username, password }));
+    const result = await unwrapAs<{ role: Role }>(loginAction({ username, password }));
     if (result) {
       toast.success(t("Signed in."));
-      router.replace("/dashboard");
+      router.replace(
+        result.role === ROLE.ADMIN || result.role === ROLE.MANAGER
+          ? "/dashboard/overview"
+          : "/dashboard/vouchers/export",
+      );
       router.refresh();
       return;
     }

@@ -28,7 +28,16 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "overview:read",
     "user:manage", // Adminstrator-only overview dashboard
   ],
-  MANAGER: [...READ, "item:write", "bom:write", "bom:activate", "voucher:write", "voucher:confirm", "voucher:cancel"],
+  MANAGER: [
+    ...READ,
+    "item:write",
+    "bom:write",
+    "bom:activate",
+    "voucher:write",
+    "voucher:confirm",
+    "voucher:cancel",
+    "overview:read",
+  ],
   // Storekeeper can confirm vouchers, but cannot cancel them: cancelling needs a manager
   STOREKEEPER: [...READ, "voucher:write", "voucher:confirm"],
   VIEWER: READ,

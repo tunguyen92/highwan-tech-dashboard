@@ -4,6 +4,7 @@ export const vi: Record<string, string> = {
   Password: "Mật khẩu",
   "Sign in": "Đăng nhập",
   "Sign in to manage stock in, stock out, and inventory.": "Đăng nhập để quản lý nhập, xuất và tồn kho.",
+  "Accounts are created by an administrator.": "Tài khoản được quản trị viên tạo.",
   "Account and Password": "Tài khoản và mật khẩu",
   "Sign out": "Đăng xuất",
   Cancel: "Hủy",
