@@ -1,4 +1,4 @@
-import type { VoucherRemarkUnit } from "@/lib/wms/constants";
+import { maxQuantityDecimalPlacesForUnit, type VoucherRemarkUnit } from "@/lib/wms/constants";
 import { Item } from "@/server/models/item";
 import { VOUCHER_RULES, VOUCHER_STATUS, Voucher, type VoucherType } from "@/server/models/voucher";
 
@@ -40,10 +40,15 @@ async function build(input: DraftInput) {
     }
     const qty = D(l.quantity);
     if (!isPositive(qty)) throw new Error(`QTY_MUST_BE_POSITIVE:${it.code}`);
-    if (decimalsOf(qty) > it.decimalPlaces) throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+    if (decimalsOf(qty) > maxQuantityDecimalPlacesForUnit(it.unit)) {
+      throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+    }
     const remarkQuantity = l.remarkQuantity !== undefined ? D(l.remarkQuantity) : undefined;
     if (remarkQuantity && !isPositive(remarkQuantity)) throw new Error(`REMARK_QTY_MUST_BE_POSITIVE:${it.code}`);
     if (remarkQuantity && !l.remarkUnit) throw new Error(`REMARK_UNIT_REQUIRED:${it.code}`);
+    if (remarkQuantity && decimalsOf(remarkQuantity) > maxQuantityDecimalPlacesForUnit(l.remarkUnit ?? "")) {
+      throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+    }
     return {
       lineNo: idx + 1,
       itemId: it._id,

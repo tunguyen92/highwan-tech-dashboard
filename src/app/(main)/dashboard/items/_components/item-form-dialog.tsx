@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
-import { ITEM_TYPE_LABEL, type ItemType, QTY_MAX_DECIMAL_PLACES } from "@/lib/wms/constants";
+import { ITEM_TYPE_LABEL, type ItemType, isQuantityValidForUnit, QTY_MAX_DECIMAL_PLACES } from "@/lib/wms/constants";
 import { formatPrice, parsePriceInput } from "@/lib/wms/format";
 import type { ItemDTO } from "@/lib/wms/types";
 import { createItemAction, updateItemAction } from "@/server/actions/items";
@@ -38,28 +38,32 @@ const itemTypeValues = Object.keys(ITEM_TYPE_LABEL) as [ItemType, ...ItemType[]]
 const quantityPattern = new RegExp(`^\\d+(\\.\\d{1,${QTY_MAX_DECIMAL_PLACES}})?$`);
 const pricePattern = /^\d+(\.\d{1,2})?$/;
 
-const itemFormSchema = z.object({
-  code: z.string().trim().min(1, "Enter the code.").max(50),
-  name: z.string().trim().min(1, "Enter the name.").max(200),
-  spec: z.string().max(100),
-  productionLine: z.string().max(100),
-  price: z
-    .string()
-    .max(100)
-    .refine((value) => value === "" || pricePattern.test(value), "Enter a price with up to 2 decimal places."),
-  type: z.enum(itemTypeValues),
-  unit: z.string().trim().min(1, "Select a unit.").max(20),
-  decimalPlaces: z
-    .string()
-    .refine(
-      (value) => /^\d+$/.test(value) && Number(value) <= QTY_MAX_DECIMAL_PLACES,
-      `Choose between 0 and ${QTY_MAX_DECIMAL_PLACES} decimal places.`,
-    ),
-  minStock: z.string().refine((value) => value === "" || quantityPattern.test(value), "Enter a valid quantity."),
-  exclude: z.boolean(),
-  packSize: z.string().max(100),
-  note: z.string().max(500),
-});
+const itemFormSchema = z
+  .object({
+    code: z.string().trim().min(1, "Enter the code.").max(50),
+    name: z.string().trim().min(1, "Enter the name.").max(200),
+    spec: z.string().max(100),
+    productionLine: z.string().max(100),
+    price: z
+      .string()
+      .max(100)
+      .refine((value) => value === "" || pricePattern.test(value), "Enter a price with up to 2 decimal places."),
+    type: z.enum(itemTypeValues),
+    unit: z.string().trim().min(1, "Select a unit.").max(20),
+    minStock: z.string().refine((value) => value === "" || quantityPattern.test(value), "Enter a valid quantity."),
+    exclude: z.boolean(),
+    packSize: z.string().max(100),
+    note: z.string().max(500),
+  })
+  .superRefine(({ unit, minStock }, ctx) => {
+    if (minStock !== "" && quantityPattern.test(minStock) && !isQuantityValidForUnit(minStock, unit)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Quantity has more decimal places than allowed",
+        path: ["minStock"],
+      });
+    }
+  });
 
 type ItemFormValues = z.infer<typeof itemFormSchema>;
 
@@ -86,7 +90,6 @@ export function ItemFormDialog({
       price: item?.price ?? "",
       type: item?.type ?? "MATERIAL",
       unit: item?.unit ?? "",
-      decimalPlaces: String(item?.decimalPlaces ?? 0),
       minStock: item?.minStock ?? "0",
       exclude: item?.excludeFromReconciliation ?? false,
       packSize: item?.packSize ?? "",
@@ -105,7 +108,6 @@ export function ItemFormDialog({
       price: blankToUndefined(values.price),
       type: values.type,
       unit: values.unit.trim(),
-      decimalPlaces: Number(values.decimalPlaces),
       minStock: values.minStock === "" ? "0" : values.minStock,
       excludeFromReconciliation: values.exclude,
       packSize: blankToUndefined(values.packSize),
@@ -125,9 +127,7 @@ export function ItemFormDialog({
         <DialogHeader>
           <DialogTitle>{item ? t("Edit item {code}", { code: item.code }) : t("Add item")}</DialogTitle>
           <DialogDescription>
-            {t(
-              "Code, type, unit and decimal places are locked once the item has vouchers, stock transactions or a BOM.",
-            )}
+            {t("Code, type and unit are locked once the item has vouchers, stock transactions or a BOM.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -214,7 +214,7 @@ export function ItemFormDialog({
               )}
             />
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Controller
                 control={form.control}
                 name="unit"
@@ -236,36 +236,6 @@ export function ItemFormDialog({
                           {ITEM_UNITS.map((value) => (
                             <SelectItem key={value} value={value}>
                               {value}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
-                  </Field>
-                )}
-              />
-              <Controller
-                control={form.control}
-                name="decimalPlaces"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="item-dp">{t("Decimal places")}</FieldLabel>
-                    <Select name={field.name} value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        id="item-dp"
-                        className="w-full"
-                        ref={field.ref}
-                        onBlur={field.onBlur}
-                        aria-invalid={fieldState.invalid}
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {Array.from({ length: QTY_MAX_DECIMAL_PLACES + 1 }, (_, n) => n).map((n) => (
-                            <SelectItem key={n} value={String(n)}>
-                              {n === 0 ? t("0 (whole numbers)") : t("{n} digit(s)", { n })}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -301,9 +271,7 @@ export function ItemFormDialog({
               </FieldDescription>
             ) : (
               <FieldDescription>
-                {t(
-                  "Each item has a single unit used for BOMs, vouchers and stock. For wire measured in meters, choose 2 decimal places.",
-                )}
+                {t("Only M and KG units accept fractional quantities; all other units must be whole numbers.")}
               </FieldDescription>
             )}
 

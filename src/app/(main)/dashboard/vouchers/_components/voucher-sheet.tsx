@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useT } from "@/lib/i18n/provider";
 import { unwrap, unwrapAs } from "@/lib/wms/action-client";
 import {
-  QTY_MAX_DECIMAL_PLACES,
+  isQuantityValidForUnit,
   VOUCHER_REMARK_UNIT,
   VOUCHER_RULES,
   VOUCHER_TYPE,
@@ -191,14 +191,25 @@ export function VoucherSheet({
 
   /** Validates and saves the draft; returns the voucher id, or null when something is wrong */
   async function saveDraft(values: VoucherSheetFormValues): Promise<string | null> {
-    const quantityPattern = new RegExp(`^\\d+(\\.\\d{1,${QTY_MAX_DECIMAL_PLACES}})?$`);
     const filled = values.lines.filter((line) => line.itemId);
     if (filled.length === 0) {
       toast.error(t("The voucher needs at least one line with an item."));
       return null;
     }
-    if (filled.some((line) => !(Number(line.quantity) > 0) || !quantityPattern.test(line.quantity))) {
-      toast.error(t("Every line needs a quantity greater than 0."));
+    if (
+      filled.some((line) => {
+        const item = line.itemId ? itemById.get(line.itemId) : undefined;
+        const remarkQuantity = line.remarkQuantity.trim();
+        return (
+          !(Number(line.quantity) > 0) ||
+          !item ||
+          !isQuantityValidForUnit(line.quantity, item.unit) ||
+          (remarkQuantity !== "" &&
+            (!(Number(remarkQuantity) > 0) || !isQuantityValidForUnit(remarkQuantity, line.remarkUnit)))
+        );
+      })
+    ) {
+      toast.error(t("Every line needs a valid quantity for its unit."));
       return null;
     }
     const result = await unwrapAs<{ id: string }>(

@@ -1,15 +1,16 @@
 import type { Types } from "mongoose";
 
+import { maxQuantityDecimalPlacesForUnit } from "@/lib/wms/constants";
 import { Bom } from "@/server/models/bom";
 import { Inventory } from "@/server/models/inventory";
 import { Item } from "@/server/models/item";
 import { StockTransaction } from "@/server/models/stock-transaction";
 import { Voucher } from "@/server/models/voucher";
 
-import { D } from "./decimal";
+import { D, decimalsOf } from "./decimal";
 
 // Changing any of these after the item has been used would corrupt history or snapshots
-const LOCKED_WHEN_REFERENCED = ["code", "type", "unit", "decimalPlaces"] as const;
+const LOCKED_WHEN_REFERENCED = ["code", "type", "unit"] as const;
 
 const escapeRegex = (s: string) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
@@ -55,9 +56,13 @@ export async function listItemsPage(f: ItemListFilter & { page: number; pageSize
 }
 
 export async function createItem(input: any) {
+  const minStock = D(input.minStock ?? "0");
+  if (decimalsOf(minStock) > maxQuantityDecimalPlacesForUnit(input.unit)) {
+    throw new Error("QTY_TOO_MANY_DECIMALS");
+  }
   return Item.create({
     ...input,
-    minStock: D(input.minStock ?? "0"),
+    minStock,
     price: input.price === undefined ? undefined : D(input.price),
   });
 }
@@ -65,6 +70,12 @@ export async function createItem(input: any) {
 export async function updateItem(itemId: string, patch: Record<string, any>) {
   const item = await Item.findById(itemId);
   if (!item) throw new Error("ITEM_NOT_FOUND");
+
+  const unit = patch.unit ?? item.unit;
+  const minStock = patch.minStock === undefined ? item.minStock : D(patch.minStock);
+  if (decimalsOf(minStock) > maxQuantityDecimalPlacesForUnit(unit)) {
+    throw new Error("QTY_TOO_MANY_DECIMALS");
+  }
 
   const changesLocked = LOCKED_WHEN_REFERENCED.some(
     (k) => patch[k] !== undefined && String(patch[k]).toUpperCase() !== String(item.get(k)).toUpperCase(),

@@ -13,6 +13,18 @@ export const ITEM_TYPE_LABEL: Record<ItemType, string> = {
 
 export const QTY_MAX_DECIMAL_PLACES = 10;
 
+export const maxQuantityDecimalPlacesForUnit = (unit: string) =>
+  unit.trim().toUpperCase() === "M" || unit.trim().toUpperCase() === "KG" ? QTY_MAX_DECIMAL_PLACES : 0;
+
+const quantityPattern = new RegExp(`^\\d+(?:\\.(\\d{1,${QTY_MAX_DECIMAL_PLACES}}))?$`);
+
+export const isQuantityValidForUnit = (quantity: string, unit: string) => {
+  const match = quantityPattern.exec(quantity);
+  if (!match) return false;
+  const decimalPlaces = (match[1] ?? "").replace(/0+$/, "").length;
+  return decimalPlaces <= maxQuantityDecimalPlacesForUnit(unit);
+};
+
 export const VOUCHER_REMARK_UNIT = {
   BOX: "BOX",
   BAG: "BAG",

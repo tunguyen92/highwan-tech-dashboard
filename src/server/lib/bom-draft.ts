@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-import { QTY_MAX_DECIMAL_PLACES } from "@/lib/wms/constants";
+import { maxQuantityDecimalPlacesForUnit } from "@/lib/wms/constants";
 import { BOM_STATUS, Bom } from "@/server/models/bom";
 import { ITEM_TYPE, Item } from "@/server/models/item";
 
@@ -28,8 +28,9 @@ async function buildLines(outputItemId: string, lines: LineInput[]) {
     if (it.type === ITEM_TYPE.PRODUCT) throw new Error(`BOM_LINE_CANNOT_BE_PRODUCT:${it.code}`);
     const q = D(l.quantity);
     if (!isPositive(q)) throw new Error("BOM_QTY_MUST_BE_POSITIVE");
-    // BOM quantities are per ONE unit of output, so they may need more decimals than the stock unit allows
-    if (decimalsOf(q) > QTY_MAX_DECIMAL_PLACES) throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+    if (decimalsOf(q) > maxQuantityDecimalPlacesForUnit(it.unit)) {
+      throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+    }
     return {
       itemId: it._id,
       itemCode: it.code,

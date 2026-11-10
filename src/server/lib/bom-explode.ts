@@ -1,6 +1,7 @@
 import Decimal from "decimal.js";
 import type { ClientSession, Types } from "mongoose";
 
+import { maxQuantityDecimalPlacesForUnit } from "@/lib/wms/constants";
 import { BOM_STATUS, Bom } from "@/server/models/bom";
 import { type IItem, ITEM_TYPE, Item } from "@/server/models/item";
 
@@ -89,8 +90,12 @@ export async function explodeBom(
 export async function calculateBomRequirements(productId: string, quantity: string | number) {
   const product = await Item.findById(productId).lean();
   if (!product || product.type === ITEM_TYPE.MATERIAL) throw new Error("PRODUCT_NOT_FOUND");
+  const requestedQuantity = new Decimal(quantity);
+  if (requestedQuantity.decimalPlaces() > maxQuantityDecimalPlacesForUnit(product.unit)) {
+    throw new Error("QTY_TOO_MANY_DECIMALS");
+  }
 
-  const needs = await explodeBom(productId, quantity);
+  const needs = await explodeBom(productId, requestedQuantity);
   const items = await Item.find({ _id: { $in: [...needs.keys()] } }).lean();
   const byId = new Map(items.map((i) => [String(i._id), i]));
 
@@ -101,8 +106,8 @@ export async function calculateBomRequirements(productId: string, quantity: stri
       itemCode: it.code,
       itemName: it.name,
       unit: it.unit,
-      // Round UP to the item's decimal places so it passes confirm-time validation; the storekeeper then adjusts to the actual issued quantity
-      quantity: n.norm.toDecimalPlaces(it.decimalPlaces, Decimal.ROUND_UP).toString(),
+      // Round up to the unit's supported precision; the storekeeper then adjusts to the actual issued quantity
+      quantity: n.norm.toDecimalPlaces(maxQuantityDecimalPlacesForUnit(it.unit), Decimal.ROUND_UP).toString(),
       normQuantity: n.norm.toString(),
     };
   });

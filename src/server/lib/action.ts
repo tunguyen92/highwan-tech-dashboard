@@ -35,7 +35,7 @@ const MESSAGES: Record<string, string> = {
   QTY_TOO_MANY_DECIMALS: "Quantity has more decimal places than allowed",
   REMARK_QTY_MUST_BE_POSITIVE: "Remark quantity must be greater than 0",
   REMARK_UNIT_REQUIRED: "Select BOX or BAG for the remark quantity",
-  ITEM_FIELD_LOCKED: "This item already has data, so its code, type, unit and decimal places cannot be changed.",
+  ITEM_FIELD_LOCKED: "This item already has data, so its code, type and unit cannot be changed.",
   ITEM_HAS_STOCK: "The item still has stock and cannot be deactivated.",
   BOM_NOT_FOUND: "No active BOM for",
   BOM_CIRCULAR_REFERENCE: "The BOM contains a circular reference.",

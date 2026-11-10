@@ -51,7 +51,7 @@ P --> L[dashboard/layout<br/>kiểm người dùng trong CSDL]
 ### 2.2 Ràng buộc thiết kế
 
 1.  Mọi thao tác ghi ảnh hưởng tồn kho nằm trong _một_ transaction MongoDB.
-2.  Số lượng lưu bằng Decimal128 và truyền qua mạng dạng chuỗi; không dùng số thực. Tính toán phía client/server dùng decimal.js.
+2.  Số lượng lưu bằng Decimal128 và truyền qua mạng dạng chuỗi; không dùng số thực. Tính toán phía client/server dùng decimal.js; khi lưu, bỏ các số 0 thừa ở cuối phần thập phân.
 3.  Kho một đơn vị: mỗi mã hàng chỉ có _một_ đơn vị tính; không có bộ chuyển đổi đơn vị.
 4.  Lịch sử giao dịch kho _chỉ thêm_, không sửa, không xóa.
 5.  Ngày nghiệp vụ và số phiếu theo giờ Việt Nam (UTC+7).
@@ -92,9 +92,9 @@ Ký hiệu: _Quyền_ là quyền tối thiểu cần có (bảng ở mục 7).
 
 | Mã        | Yêu cầu                                                                                                                                                                                  | Quyền      |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| FR-ITM-01 | Tạo mã hàng: mã (chuẩn hóa chữ hoa, duy nhất), tên, loại (MATERIAL`/SEMI`/`PRODUCT`), đơn vị, số chữ số lẻ 0–6, nhóm, tồn tối thiểu, cờ “không đối chiếu”, quy cách (tham khảo), ghi chú | item:write |
+| FR-ITM-01 | Tạo mã hàng: mã (chuẩn hóa chữ hoa, duy nhất), tên, loại (MATERIAL`/SEMI`/`PRODUCT`), đơn vị, nhóm, tồn tối thiểu, cờ “không đối chiếu”, quy cách (tham khảo), ghi chú; M/KG nhận số lẻ tối đa 10 chữ số, các đơn vị khác chỉ nhận số nguyên | item:write |
 | FR-ITM-02 | isStocked luôn suy ra từ loại: SEMI là false, còn lại true; không sửa tay                                                                                                                | item:write |
-| FR-ITM-03 | Khi mã đã xuất hiện trong phiếu, giao dịch kho hoặc định mức, _khóa_ việc đổi code, type, unit, decimalPlaces (lỗi ITEM_FIELD_LOCKED). Đổi tên, nhóm, tồn tối thiểu, ghi chú vẫn được    | item:write |
+| FR-ITM-03 | Khi mã đã xuất hiện trong phiếu, giao dịch kho hoặc định mức, _khóa_ việc đổi code, type, unit (lỗi ITEM_FIELD_LOCKED). Đổi tên, nhóm, tồn tối thiểu, ghi chú vẫn được | item:write |
 | FR-ITM-04 | Ngừng sử dụng (ẩn) thay vì xóa. Không ngừng được mã còn tồn kho > 0 (ITEM_HAS_STOCK)                                                                                                     | item:write |
 | FR-ITM-05 | Liệt kê, lọc theo loại, tìm theo mã/tên, tùy chọn gồm mã đã ngừng; tối đa 1000 dòng                                                                                                      | item:read  |
 | FR-ITM-06 | Tra ngược: liệt kê các định mức _đang áp dụng_ chứa một mã hàng                                                                                                                          | bom:read   |
@@ -104,7 +104,7 @@ Ký hiệu: _Quyền_ là quyền tối thiểu cần có (bảng ở mục 7).
 | Mã        | Yêu cầu                                                                                                                                                                                                                                     | Quyền         |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | FR-BOM-01 | Tạo bản nháp cho một PRODUCT hoặc SEMI (không lập cho MATERIAL). Phiên bản = lớn nhất hiện có + 1. Mỗi mã chỉ có tối đa 1 bản nháp (BOM_DRAFT_EXISTS)                                                                                       | bom:write     |
-| FR-BOM-02 | Dòng định mức: mã là MATERIAL hoặc SEMI, đang hoạt động, không trùng, không là chính đầu ra; số lượng > 0 tối đa 6 chữ số lẻ; hao hụt cho phép 0–100%. Mã, tên, đơn vị được chụp (snapshot) vào dòng. Tối đa 500 dòng                       | bom:write     |
+| FR-BOM-02 | Dòng định mức: mã là MATERIAL hoặc SEMI, đang hoạt động, không trùng, không là chính đầu ra; số lượng > 0, M/KG tối đa 10 chữ số lẻ và đơn vị khác phải nguyên; hao hụt cho phép 0–100%. Mã, tên, đơn vị được chụp (snapshot) vào dòng. Tối đa 500 dòng | bom:write |
 | FR-BOM-03 | Chỉ sửa/xóa được bản _nháp_; điều kiện trạng thái nằm trong chính câu lệnh cập nhật                                                                                                                                                         | bom:write     |
 | FR-BOM-04 | Kích hoạt (một transaction): chỉ bản nháp; không rỗng; kiểm tra loại mã; _kiểm tra vòng lặp_; chuyển bản ACTIVE cũ sang ARCHIVED; đặt ACTIVE, effectiveFrom, người và thời điểm kích hoạt. Cơ sở dữ liệu đảm bảo mỗi mã tối đa 1 bản ACTIVE | bom:activate  |
 | FR-BOM-05 | Tạo phiên bản mới: sao chép một định mức (thường là bản đang áp dụng) thành bản nháp mới, làm mới snapshot từ danh mục hiện tại                                                                                                             | bom:write     |
@@ -117,7 +117,7 @@ Ký hiệu: _Quyền_ là quyền tối thiểu cần có (bảng ở mục 7).
 | Mã        | Yêu cầu                                                                                                                                                                                                                                    | Quyền           |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
 | FR-VCH-01 | Sáu loại phiếu với quy tắc loại mã hàng ở bảng 3.5.1                                                                                                                                                                                       |                 |
-| FR-VCH-02 | Lưu nháp: kiểm tra mã tồn tại, đang hoạt động, có lưu kho, đúng loại theo phiếu, không trùng mã trong phiếu, số lượng > 0, không vượt số chữ số lẻ của mã. Chụp mã, tên, đơn vị vào từng dòng. Tối đa 500 dòng                             | voucher:write   |
+| FR-VCH-02 | Lưu nháp: kiểm tra mã tồn tại, đang hoạt động, có lưu kho, đúng loại theo phiếu, không trùng mã trong phiếu, số lượng > 0; M/KG nhận số lẻ tối đa 10 chữ số, các đơn vị khác (kể cả ghi chú BOX/BAG) chỉ nhận số nguyên. Chụp mã, tên, đơn vị vào từng dòng. Tối đa 500 dòng | voucher:write |
 | FR-VCH-03 | Chỉ sửa/xóa được phiếu _nháp_ (điều kiện nằm trong câu lệnh cập nhật, không đè lên phiếu vừa được xác nhận)                                                                                                                                | voucher:write   |
 | FR-VCH-04 | Xác nhận (một transaction, mục 6.1): “chiếm” phiếu từ nháp sang xác nhận một cách nguyên tử, kiểm tra lại từng dòng, cấp số phiếu, cập nhật tồn, ghi giao dịch kho. Lỗi ở bất kỳ bước nào thì hoàn tác toàn bộ và phiếu giữ nguyên là nháp | voucher:confirm |
 | FR-VCH-05 | Số phiếu PN-YYYY-00001 (nhập) và PX-YYYY-00001 (xuất); năm tính theo ngày chứng từ giờ Việt Nam; bộ đếm tăng nguyên tử; chỉ cấp khi xác nhận để không hổng số do phiếu nháp                                                                |                 |
@@ -196,9 +196,8 @@ BOM_LINE và VOUCHER_LINE là mảng nhúng trong tài liệu cha. Mọi giá tr
 | Trường                    | Kiểu       | Ghi chú                     |
 | ------------------------- | ---------- | --------------------------- |
 | code                      | string     | Chữ hoa, duy nhất           |
-| name, unit                | string     |                             |
+| name, unit                | string     | M/KG cho phép số lẻ; đơn vị khác chỉ nhận số nguyên |
 | type                      | enum       | MATERIAL \| SEMI \| PRODUCT |
-| decimalPlaces             | number     | 0–6                         |
 | group, packSize, note     | string?    | packSize chỉ để tham khảo   |
 | minStock                  | Decimal128 | Mặc định 0                  |
 | isStocked                 | boolean    | Suy ra từ type              |
@@ -284,7 +283,7 @@ Phiếu CANCELLED và định mức ARCHIVED không chuyển ngược trạng th
 Trong một transaction:
 
 1.  Cập nhật có điều kiện status = DRAFT → CONFIRMED. Nếu không khớp: VOUCHER_NOT_DRAFT (chống bấm xác nhận hai lần).
-2.  Phiếu phải có dòng; với mỗi dòng kiểm tra: mã tồn tại, đang hoạt động, có lưu kho, loại mã hợp lệ theo bảng 3.5.1, số lượng > 0, số chữ số lẻ ≤ decimalPlaces.
+2.  Phiếu phải có dòng; với mỗi dòng kiểm tra: mã tồn tại, đang hoạt động, có lưu kho, loại mã hợp lệ theo bảng 3.5.1, số lượng > 0 và phù hợp độ chính xác của đơn vị (M/KG tối đa 10 chữ số lẻ, đơn vị khác là số nguyên).
 3.  Cấp voucherNo từ bộ đếm theo năm Việt Nam của ngày chứng từ.
 4.  Duyệt các dòng theo thứ tự itemId (để các phiếu song song khóa theo cùng thứ tự, giảm xung đột ghi):
 

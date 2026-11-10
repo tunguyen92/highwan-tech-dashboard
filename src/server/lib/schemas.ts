@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   BOM_STATUS,
   ITEM_TYPE,
+  isQuantityValidForUnit,
   QTY_MAX_DECIMAL_PLACES,
   ROLE,
   VOUCHER_REMARK_UNIT,
@@ -41,7 +42,7 @@ export const createUserSchema = z.object({
 });
 export const updateUserSchema = z.object({ role: enumOf(ROLE).optional(), isActive: z.boolean().optional() });
 
-export const itemCreateSchema = z.object({
+const itemBaseSchema = z.object({
   code: z.string().trim().min(1).max(50),
   name: z.string().trim().min(1).max(200),
   spec: z.string().trim().max(100).optional(),
@@ -54,13 +55,22 @@ export const itemCreateSchema = z.object({
     .optional(),
   type: enumOf(ITEM_TYPE),
   unit: z.string().trim().min(1).max(20),
-  decimalPlaces: z.number().int().min(0).max(QTY_MAX_DECIMAL_PLACES).default(0),
   minStock: qty.default("0"),
   excludeFromReconciliation: z.boolean().default(false),
   packSize: z.string().trim().max(100).optional(),
   note: z.string().trim().max(500).optional(),
 });
-export const itemUpdateSchema = itemCreateSchema.partial();
+
+export const itemCreateSchema = itemBaseSchema.superRefine(({ unit, minStock }, ctx) => {
+  if (!isQuantityValidForUnit(minStock, unit)) {
+    ctx.addIssue({ code: "custom", message: "Quantity has more decimal places than allowed", path: ["minStock"] });
+  }
+});
+export const itemUpdateSchema = itemBaseSchema.partial().superRefine(({ unit, minStock }, ctx) => {
+  if (unit !== undefined && minStock !== undefined && !isQuantityValidForUnit(minStock, unit)) {
+    ctx.addIssue({ code: "custom", message: "Quantity has more decimal places than allowed", path: ["minStock"] });
+  }
+});
 export const itemFilterSchema = z.object({
   type: enumOf(ITEM_TYPE).optional(),
   q: z.string().trim().max(100).optional(),

@@ -1,7 +1,8 @@
+import Decimal from "decimal.js";
 import { Types } from "mongoose";
 
 export const D = (v: string | number | Types.Decimal128) =>
-  v instanceof Types.Decimal128 ? v : Types.Decimal128.fromString(String(v));
+  Types.Decimal128.fromString(new Decimal(v instanceof Types.Decimal128 ? v.toString() : String(v)).toFixed());
 
 export const isPositive = (d: Types.Decimal128) => {
   const s = d.toString();

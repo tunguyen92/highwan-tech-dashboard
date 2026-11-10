@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useT } from "@/lib/i18n/provider";
 import { unwrap, unwrapAs } from "@/lib/wms/action-client";
+import { isQuantityValidForUnit } from "@/lib/wms/constants";
 import { formatDate } from "@/lib/wms/format";
 import type { BomDTO } from "@/lib/wms/types";
 import { useLoad } from "@/lib/wms/use-load";
@@ -154,8 +155,8 @@ export function BomEditor({ bomId }: { bomId: string }) {
     let saved = false;
     await form.handleSubmit(async ({ lines: values }) => {
       const filled = values.filter((line): line is BomEditorLine & { itemId: string } => Boolean(line.itemId));
-      if (filled.some((line) => !(Number(line.quantity) > 0))) {
-        toast.error(t("Every line needs a quantity greater than 0."));
+      if (filled.some((line) => !(Number(line.quantity) > 0) || !isQuantityValidForUnit(line.quantity, line.unit))) {
+        toast.error(t("Every line needs a valid quantity for its unit."));
         return;
       }
 
@@ -294,7 +295,11 @@ export function BomEditor({ bomId }: { bomId: string }) {
 
           <TabsContent value="explode">
             {bom.status === "ACTIVE" ? (
-              <BomExplodePanel outputItemId={bom.outputItemId} outputItemCode={bom.outputItemCode} />
+              <BomExplodePanel
+                outputItemId={bom.outputItemId}
+                outputItemCode={bom.outputItemCode}
+                outputItemUnit={outputItem?.unit}
+              />
             ) : (
               <p className="text-muted-foreground px-4 text-sm">
                 {t("The total requirement can only be calculated for the active BOM. Activate this draft first.")}

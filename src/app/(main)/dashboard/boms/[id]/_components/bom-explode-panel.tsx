@@ -3,12 +3,14 @@
 import { useState } from "react";
 
 import { Calculator, Download } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
+import { isQuantityValidForUnit } from "@/lib/wms/constants";
 import { downloadCsv } from "@/lib/wms/csv";
 import { formatQty } from "@/lib/wms/format";
 import type { BomRequirementsDTO } from "@/lib/wms/types";
@@ -18,13 +20,25 @@ import { tableClass } from "../../../_components/wms/page-card";
 import { QtyInput } from "../../../_components/wms/qty-input";
 
 /** Total raw-material requirement for N finished products, using the ACTIVE BOM (all levels merged) */
-export function BomExplodePanel({ outputItemId, outputItemCode }: { outputItemId: string; outputItemCode: string }) {
+export function BomExplodePanel({
+  outputItemId,
+  outputItemCode,
+  outputItemUnit,
+}: {
+  outputItemId: string;
+  outputItemCode: string;
+  outputItemUnit?: string;
+}) {
   const t = useT();
   const [quantity, setQuantity] = useState("100");
   const [result, setResult] = useState<BomRequirementsDTO | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function calculate() {
+    if (outputItemUnit && !isQuantityValidForUnit(quantity, outputItemUnit)) {
+      toast.error(t("Quantity has more decimal places than allowed"));
+      return;
+    }
     setBusy(true);
     setResult(await unwrapAs<BomRequirementsDTO>(explodePreviewAction(outputItemId, quantity)));
     setBusy(false);

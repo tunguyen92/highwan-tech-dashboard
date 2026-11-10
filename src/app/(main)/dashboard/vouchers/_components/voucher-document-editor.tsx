@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
 import {
+  isQuantityValidForUnit,
   VOUCHER_REMARK_UNIT,
   VOUCHER_RULES,
   VOUCHER_TYPE,
@@ -244,8 +245,20 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
       toast.error(t("The voucher needs at least one line with an item."));
       return null;
     }
-    if (filled.some((line) => !(Number(line.quantity) > 0))) {
-      toast.error(t("Every line needs a quantity greater than 0."));
+    if (
+      filled.some((line) => {
+        const item = itemById.get(line.itemId);
+        const remarkQuantity = line.remarkQuantity.trim();
+        return (
+          !(Number(line.quantity) > 0) ||
+          !item ||
+          !isQuantityValidForUnit(line.quantity, item.unit) ||
+          (remarkQuantity !== "" &&
+            (!(Number(remarkQuantity) > 0) || !isQuantityValidForUnit(remarkQuantity, line.remarkUnit)))
+        );
+      })
+    ) {
+      toast.error(t("Every line needs a valid quantity for its unit."));
       return null;
     }
 

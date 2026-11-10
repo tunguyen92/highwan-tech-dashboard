@@ -1,7 +1,7 @@
 import Decimal from "decimal.js";
 import mongoose, { type ClientSession, Types } from "mongoose";
 
-import { ITEM_TYPE } from "@/lib/wms/constants";
+import { ITEM_TYPE, maxQuantityDecimalPlacesForUnit } from "@/lib/wms/constants";
 import { Counter } from "@/server/models/counter";
 import { Inventory } from "@/server/models/inventory";
 import { Item } from "@/server/models/item";
@@ -80,7 +80,15 @@ export async function confirmVoucher(voucherId: string, userId: string) {
           throw new Error(`ITEM_TYPE_NOT_ALLOWED:${it.code}`);
         }
         if (!isPositive(l.quantity)) throw new Error(`QTY_MUST_BE_POSITIVE:${it.code}`);
-        if (decimalsOf(l.quantity) > it.decimalPlaces) throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+        if (decimalsOf(l.quantity) > maxQuantityDecimalPlacesForUnit(it.unit)) {
+          throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+        }
+        if (l.remarkQuantity) {
+          if (!l.remarkUnit) throw new Error(`REMARK_UNIT_REQUIRED:${it.code}`);
+          if (decimalsOf(l.remarkQuantity) > maxQuantityDecimalPlacesForUnit(l.remarkUnit)) {
+            throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
+          }
+        }
       }
 
       const bomConsumption = new Map<string, Decimal>();
@@ -107,9 +115,11 @@ export async function confirmVoucher(voucherId: string, userId: string) {
           if (!item.isStocked) throw new Error(`ITEM_NOT_STOCKED:${item.code}`);
           if (item.type !== ITEM_TYPE.MATERIAL) throw new Error(`ITEM_TYPE_NOT_ALLOWED:${item.code}`);
 
-          const roundedQuantity = D(quantity.toDecimalPlaces(item.decimalPlaces, Decimal.ROUND_UP).toString());
+          const roundedQuantity = D(
+            quantity.toDecimalPlaces(maxQuantityDecimalPlacesForUnit(item.unit), Decimal.ROUND_UP).toString(),
+          );
           if (!isPositive(roundedQuantity)) throw new Error(`QTY_MUST_BE_POSITIVE:${item.code}`);
-          if (decimalsOf(roundedQuantity) > item.decimalPlaces) {
+          if (decimalsOf(roundedQuantity) > maxQuantityDecimalPlacesForUnit(item.unit)) {
             throw new Error(`QTY_TOO_MANY_DECIMALS:${item.code}`);
           }
           return {

@@ -144,20 +144,17 @@ export const vi: Record<string, string> = {
   "Item added.": "Đã thêm mã hàng.",
   "Edit item {code}": "Sửa mã hàng {code}",
   "Add item": "Thêm mã hàng",
-  "Code, type, unit and decimal places are locked once the item has vouchers, stock transactions or a BOM.":
-    "Mã, loại, đơn vị và số lẻ sẽ bị khóa khi mã hàng đã có phiếu, giao dịch kho hoặc định mức.",
+  "Code, type and unit are locked once the item has vouchers, stock transactions or a BOM.":
+    "Mã, loại và đơn vị sẽ bị khóa khi mã hàng đã có phiếu, giao dịch kho hoặc định mức.",
   "Code *": "Mã *",
   "Type *": "Loại *",
   "Name *": "Tên *",
   "Unit of measure *": "Đơn vị tính *",
-  "Decimal places": "Số chữ số lẻ",
-  "0 (whole numbers)": "0 (đếm số nguyên)",
-  "{n} digit(s)": "{n} chữ số",
   "Minimum stock": "Tồn tối thiểu",
   "Semi-finished items are not stocked: they only serve as an intermediate level in a BOM.":
     "Bán thành phẩm không lưu kho: chỉ dùng làm cấp trung gian trong định mức.",
-  "Each item has a single unit used for BOMs, vouchers and stock. For wire measured in meters, choose 2 decimal places.":
-    "Mỗi mã chỉ có một đơn vị dùng chung cho định mức, phiếu và tồn kho. Dây điện tính theo mét thì chọn 2 chữ số lẻ.",
+  "Only M and KG units accept fractional quantities; all other units must be whole numbers.":
+    "Chỉ đơn vị M và KG được nhập số lẻ; các đơn vị khác phải là số nguyên.",
   Group: "Nhóm",
   "e.g. Resistors, ICs, Wires": "VD: Điện trở, IC, Dây điện",
   "Packaging (reference only)": "Quy cách đóng gói (tham khảo)",
@@ -413,8 +410,9 @@ export const vi: Record<string, string> = {
   "Item type does not fit the voucher type": "Loại mã hàng không phù hợp với loại phiếu",
   "Quantity must be greater than 0": "Số lượng phải lớn hơn 0",
   "Quantity has more decimal places than allowed": "Số lượng vượt quá số chữ số thập phân cho phép",
-  "This item already has data, so its code, type, unit and decimal places cannot be changed.":
-    "Mã hàng đã phát sinh dữ liệu, không được đổi mã, loại, đơn vị hoặc số lẻ.",
+  "Every line needs a valid quantity for its unit.": "Mỗi dòng cần có số lượng hợp lệ theo đơn vị tính.",
+  "This item already has data, so its code, type and unit cannot be changed.":
+    "Mã hàng đã phát sinh dữ liệu, không được đổi mã, loại hoặc đơn vị.",
   "The item still has stock and cannot be deactivated.": "Mã hàng còn tồn kho, không thể ngừng sử dụng.",
   "No active BOM for": "Chưa có định mức đang áp dụng cho",
   "The BOM contains a circular reference.": "Định mức bị tham chiếu vòng.",

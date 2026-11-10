@@ -9,7 +9,6 @@ export type ItemDTO = {
   price?: string;
   type: ItemType;
   unit: string;
-  decimalPlaces: number;
   minStock: string;
   isStocked: boolean;
   excludeFromReconciliation: boolean;
