@@ -85,8 +85,8 @@ export async function explodeBom(
   return result;
 }
 
-/** Fill by norm: returns the lines for a production export voucher */
-export async function fillByBom(productId: string, quantity: string | number) {
+/** Returns the fully exploded raw-material requirement for a finished-product quantity. */
+export async function calculateBomRequirements(productId: string, quantity: string | number) {
   const product = await Item.findById(productId).lean();
   if (!product || product.type === ITEM_TYPE.MATERIAL) throw new Error("PRODUCT_NOT_FOUND");
 
@@ -108,10 +108,7 @@ export async function fillByBom(productId: string, quantity: string | number) {
   });
   lines.sort((a, b) => a.itemCode.localeCompare(b.itemCode));
 
-  return {
-    productionRef: { productId, productCode: product.code, productName: product.name, quantity: String(quantity) },
-    lines,
-  };
+  return { lines };
 }
 
 export type BomTreeNode = {

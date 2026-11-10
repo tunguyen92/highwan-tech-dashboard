@@ -1,6 +1,7 @@
 import Decimal from "decimal.js";
 import { type PipelineStage, Types } from "mongoose";
 
+import { ITEM_TYPE, VOUCHER_RULES } from "@/lib/wms/constants";
 import { Item } from "@/server/models/item";
 import { StockTransaction } from "@/server/models/stock-transaction";
 
@@ -124,18 +125,37 @@ export type ReconStatus = "OVER" | "NO_NORM" | "UNDER" | "OK";
 
 /**
  * Monthly norm reconciliation ("YYYY-MM", Vietnam time):
- * - Finished products received in the month (IMPORT_PRODUCT, net of cancellations) x current ACTIVE BOM => theoretical requirement
- * - Compared with materials actually issued (EXPORT_PRODUCTION, net of cancellations)
+ * - Finished products issued in the month x current ACTIVE BOM => theoretical requirement
+ * - Compared with materials actually issued or automatically consumed from BOMs, net of cancellations
  * * Items with excludeFromReconciliation are skipped.
  */
 export async function getMonthlyReconciliation(period: string, defaultTolerancePercent = 2, onlyAbnormal = false) {
+  const [finishedProducts, materials] = await Promise.all([
+    Item.find({ type: ITEM_TYPE.PRODUCT }, "_id").lean(),
+    Item.find({ type: ITEM_TYPE.MATERIAL }, "_id").lean(),
+  ]);
+  const outboundTypes = Object.entries(VOUCHER_RULES)
+    .filter(([, rule]) => rule.direction === "OUT")
+    .map(([type]) => type);
   const [produced, issued] = await Promise.all([
     StockTransaction.aggregate([
-      { $match: { period, voucherType: "IMPORT_PRODUCT" } },
-      { $group: { _id: "$itemId", qty: { $sum: "$signedQuantity" } } },
+      {
+        $match: {
+          period,
+          voucherType: { $in: outboundTypes },
+          itemId: { $in: finishedProducts.map((item) => item._id) },
+        },
+      },
+      { $group: { _id: "$itemId", qty: { $sum: { $multiply: ["$signedQuantity", -1] } } } },
     ]),
     StockTransaction.aggregate([
-      { $match: { period, voucherType: "EXPORT_PRODUCTION" } },
+      {
+        $match: {
+          period,
+          voucherType: { $in: outboundTypes },
+          itemId: { $in: materials.map((item) => item._id) },
+        },
+      },
       { $group: { _id: "$itemId", qty: { $sum: { $multiply: ["$signedQuantity", -1] } } } },
     ]),
   ]);
@@ -173,7 +193,7 @@ export async function getMonthlyReconciliation(period: string, defaultToleranceP
 
   const rank: Record<ReconStatus, number> = { OVER: 0, NO_NORM: 1, UNDER: 2, OK: 3 };
   let rows = items
-    .filter((it) => !it.excludeFromReconciliation)
+    .filter((it) => it.type === ITEM_TYPE.MATERIAL && !it.excludeFromReconciliation)
     .map((it) => {
       const id = String(it._id);
       const norm = need.get(id)?.norm ?? new Decimal(0);

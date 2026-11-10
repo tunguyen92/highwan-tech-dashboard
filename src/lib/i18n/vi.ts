@@ -101,8 +101,8 @@ export const vi: Record<string, string> = {
   "The total requirement can only be calculated for the active BOM. Activate this draft first.":
     "Tổng nhu cầu chỉ có thể được tính cho định mức đang hoạt động. Hãy kích hoạt bản nháp này trước.",
   "Activate BOM {outputItemCode} v{version}?": "Kích hoạt định mức {outputItemCode} v{version}?",
-  "The system checks for circular references. The active version (if any) becomes 'Superseded'. From now on, 'Fill by norm' on issue vouchers and the reconciliation report use the new version.":
-    "Hệ thống sẽ kiểm tra vòng lặp. Bản đang áp dụng (nếu có) chuyển sang 'Đã thay thế'. Từ lúc này, phiếu xuất 'Điền theo định mức' và báo cáo đối chiếu dùng bản mới.",
+  "The system checks for circular references. The active version (if any) becomes 'Superseded'. Finished-product issues and the reconciliation report use the new active version.":
+    "Hệ thống sẽ kiểm tra vòng lặp. Bản đang áp dụng (nếu có) chuyển sang 'Đã thay thế'. Phiếu xuất thành phẩm và báo cáo đối chiếu sẽ dùng bản định mức mới.",
   "Delete this draft?": "Xóa bản nháp này?",
   "The draft is deleted permanently. The active BOM is not affected.":
     "Bản nháp bị xóa vĩnh viễn. Không ảnh hưởng đến định mức đang áp dụng.",
@@ -256,7 +256,6 @@ export const vi: Record<string, string> = {
   "View stock card": "Xem thẻ kho",
   "Goods receipts": "Phiếu nhập kho",
   "Goods issues": "Phiếu xuất kho",
-  "Document number": "Số chứng từ",
   "Create goods receipt": "Tạo phiếu nhập kho",
   "Create goods issue": "Tạo phiếu xuất kho",
   Preview: "Xem trước",
@@ -280,8 +279,6 @@ export const vi: Record<string, string> = {
   "Enter the document number, date, and item lines. Review the document before printing or exporting.":
     "Nhập số chứng từ, ngày và các dòng hàng. Kiểm tra phiếu trước khi in hoặc xuất tệp.",
   "Lines that do not fit the new voucher type were removed.": "Đã bỏ các dòng không phù hợp với loại phiếu mới.",
-  "Filled {length} line(s) from the BOM. Adjust the actual issued quantity if it differs.":
-    "Đã điền {length} dòng theo định mức. Hãy chỉnh lại số thực xuất nếu khác.",
   "The voucher needs at least one line with an item.": "Phiếu cần ít nhất một dòng có mã hàng.",
   "Draft voucher saved.": "Đã lưu phiếu nháp.",
   "Voucher {voucherNo} confirmed. Stock has been updated.": "Đã xác nhận phiếu {voucherNo}. Tồn kho đã được cập nhật.",
@@ -291,35 +288,24 @@ export const vi: Record<string, string> = {
   "Draft voucher": "Phiếu nháp",
   "New voucher": "Tạo phiếu mới",
   "A draft does not affect stock. The stock ledger is only written when you confirm.":
-    "Phiếu nháp chưa ảnh hưởng tồn kho. Chỉ khi xác nhận, hệ thống mới ghi sổ kho.",
+    "Phiếu nháp chưa ảnh hưởng tồn kho. Khi xác nhận phiếu xuất thành phẩm, hệ thống cũng trừ nguyên liệu theo BOM đang áp dụng.",
   "A confirmed voucher cannot be edited. If it is wrong, cancel it and create a new one.":
     "Phiếu đã xác nhận không được sửa. Nếu nhập sai, hãy hủy phiếu và lập phiếu mới.",
   "Voucher cancelled at": "Phiếu đã bị hủy lúc",
   ". Reason:": ". Lý do:",
   "Voucher type": "Loại phiếu",
   "Voucher date": "Ngày chứng từ",
-  "Batch reference (optional)": "Mã đợt (tùy chọn)",
-  "Fill by norm: finished product": "Điền theo định mức: thành phẩm",
-  "Fill by norm": "Điền theo định mức",
-  "Norm calculated for": "Định mức tính cho",
-  '. The "Norm" column is the value at the time of filling; later BOM changes do not alter this voucher.':
-    '. Cột "Định mức" là số tại thời điểm điền, sửa định mức sau này không làm thay đổi phiếu này.',
   Items: "Mã hàng",
   Norm: "Định mức",
   "No lines yet.": "Chưa có dòng nào.",
-  "Some lines exceed the norm. You can still confirm; state the reason in the Notes column to make scrap reconciliation easier.":
-    "Có dòng xuất vượt định mức. Vẫn được phép xác nhận; hãy ghi rõ lý do ở cột Ghi chú để dễ đối chiếu hao hụt.",
   "Cancel voucher": "Hủy phiếu",
   "Save draft": "Lưu nháp",
   Confirm: "Xác nhận",
   "Confirm the voucher and post to the stock ledger?": "Xác nhận phiếu và ghi sổ kho?",
-  "Stock is deducted immediately and issuing more than the stock is not allowed. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
-    "Hệ thống trừ tồn kho ngay và không cho xuất vượt tồn. Sau khi xác nhận không sửa được; nếu sai chỉ có thể hủy phiếu.",
+  "Stock is deducted immediately and issuing more than the stock is not allowed. Finished-product issues also deduct materials from the active BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
+    "Hệ thống trừ tồn kho ngay và không cho xuất vượt tồn. Phiếu xuất thành phẩm cũng trừ nguyên liệu theo BOM đang áp dụng. Sau khi xác nhận không sửa được; nếu sai chỉ có thể hủy phiếu.",
   "Stock is increased immediately. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
     "Hệ thống tăng tồn kho ngay. Sau khi xác nhận không sửa được; nếu sai chỉ có thể hủy phiếu.",
-  "Replace the existing lines?": "Thay thế các dòng hiện có?",
-  "The lines you entered will be replaced by the list calculated from the BOM.":
-    "Các dòng đang nhập sẽ được thay bằng danh sách tính theo định mức.",
   Replace: "Thay thế",
   "Delete this draft voucher?": "Xóa phiếu nháp này?",
   "The draft is deleted permanently. Stock is not affected.": "Phiếu nháp bị xóa vĩnh viễn. Không ảnh hưởng tồn kho.",
@@ -328,13 +314,12 @@ export const vi: Record<string, string> = {
     "Hệ thống ghi giao dịch đảo để hoàn tồn kho, lịch sử vẫn được giữ. Hủy phiếu nhập sẽ bị chặn nếu hàng đã được xuất đi.",
   "Receive raw materials from the partner and finished products from production. A voucher only posts to the stock ledger once confirmed.":
     "Nhập nguyên liệu từ đối tác và nhập thành phẩm từ sản xuất. Phiếu chỉ ghi sổ kho khi được xác nhận.",
-  "Issue raw materials to production and ship finished products to the partner. Issuing more than the stock is not allowed.":
-    "Xuất nguyên liệu cho sản xuất và xuất thành phẩm giao đối tác. Không cho xuất vượt tồn kho.",
+  "Issue goods. Confirming a finished-product issue also deducts its active BOM materials. Issuing more than the stock is not allowed.":
+    "Lập phiếu xuất hàng. Khi xác nhận phiếu xuất thành phẩm, hệ thống cũng trừ nguyên liệu theo BOM đang áp dụng. Không cho xuất vượt tồn kho.",
   "Search by voucher number...": "Tìm theo số phiếu...",
   "Create voucher": "Tạo phiếu",
   "Type:": "Loại:",
   "Month:": "Tháng:",
-  Batch: "Mã đợt",
   "No vouchers yet.": "Chưa có phiếu nào.",
   "(Draft)": "(Nháp)",
   "Unauthorized access": "Không có quyền truy cập",
@@ -388,6 +373,7 @@ export const vi: Record<string, string> = {
   "Other receipt": "Nhập khác",
   "Issue to production": "Xuất sản xuất",
   "Ship to partner": "Xuất giao đối tác",
+  "Deliver for outsourcing": "Giao hàng gia công",
   "Other issue": "Xuất khác",
   Draft: "Nháp",
   Confirmed: "Đã xác nhận",

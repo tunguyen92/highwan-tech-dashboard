@@ -21,7 +21,7 @@ export interface IVoucherLine {
   itemName: string; // snapshot
   unit: string; // snapshot
   quantity: Types.Decimal128; // Actual quantity in/out (> 0)
-  normQuantity?: Types.Decimal128; // Norm at the time "Fill by norm" was used (snapshot)
+  normQuantity?: Types.Decimal128; // Legacy BOM norm snapshot from previously created vouchers
   remarkQuantity?: Types.Decimal128;
   remarkUnit?: VoucherRemarkUnit;
   note?: string;

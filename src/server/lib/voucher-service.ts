@@ -1,12 +1,15 @@
+import Decimal from "decimal.js";
 import mongoose, { type ClientSession, Types } from "mongoose";
 
+import { ITEM_TYPE } from "@/lib/wms/constants";
 import { Counter } from "@/server/models/counter";
 import { Inventory } from "@/server/models/inventory";
 import { Item } from "@/server/models/item";
 import { type IStockTransaction, StockTransaction } from "@/server/models/stock-transaction";
 import { VOUCHER_RULES, VOUCHER_STATUS, Voucher } from "@/server/models/voucher";
 
-import { decimalsOf, isPositive, negate, vnPeriod, vnYear } from "./decimal";
+import { explodeBom } from "./bom-explode";
+import { D, decimalsOf, isPositive, negate, vnPeriod, vnYear } from "./decimal";
 
 /**
  * Updates stock and returns the balance after the movement.
@@ -73,18 +76,65 @@ export async function confirmVoucher(voucherId: string, userId: string) {
         if (!it) throw new Error(`ITEM_NOT_FOUND:${l.itemCode}`);
         if (!it.isActive) throw new Error(`ITEM_INACTIVE:${it.code}`);
         if (!it.isStocked) throw new Error(`ITEM_NOT_STOCKED:${it.code}`);
-        if (!rule.allowed.includes(it.type)) throw new Error(`ITEM_TYPE_NOT_ALLOWED:${it.code}`);
+        if (rule.direction === "IN" && !rule.allowed.includes(it.type)) {
+          throw new Error(`ITEM_TYPE_NOT_ALLOWED:${it.code}`);
+        }
         if (!isPositive(l.quantity)) throw new Error(`QTY_MUST_BE_POSITIVE:${it.code}`);
         if (decimalsOf(l.quantity) > it.decimalPlaces) throw new Error(`QTY_TOO_MANY_DECIMALS:${it.code}`);
       }
+
+      const bomConsumption = new Map<string, Decimal>();
+      if (rule.direction === "OUT") {
+        for (const line of v.lines) {
+          const item = byId.get(String(line.itemId));
+          if (item?.type !== ITEM_TYPE.PRODUCT) continue;
+
+          const needs = await explodeBom(item._id, line.quantity.toString(), { session });
+          for (const [itemId, need] of needs) {
+            bomConsumption.set(itemId, (bomConsumption.get(itemId) ?? new Decimal(0)).plus(need.norm));
+          }
+        }
+      }
+
+      const componentItems = await Item.find({ _id: { $in: [...bomConsumption.keys()] } }).session(session);
+      const componentById = new Map(componentItems.map((item) => [String(item._id), item]));
+      const bomLines = [...bomConsumption.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([itemId, quantity], index) => {
+          const item = componentById.get(itemId);
+          if (!item) throw new Error(`ITEM_NOT_FOUND:${itemId}`);
+          if (!item.isActive) throw new Error(`ITEM_INACTIVE:${item.code}`);
+          if (!item.isStocked) throw new Error(`ITEM_NOT_STOCKED:${item.code}`);
+          if (item.type !== ITEM_TYPE.MATERIAL) throw new Error(`ITEM_TYPE_NOT_ALLOWED:${item.code}`);
+
+          const roundedQuantity = D(quantity.toDecimalPlaces(item.decimalPlaces, Decimal.ROUND_UP).toString());
+          if (!isPositive(roundedQuantity)) throw new Error(`QTY_MUST_BE_POSITIVE:${item.code}`);
+          if (decimalsOf(roundedQuantity) > item.decimalPlaces) {
+            throw new Error(`QTY_TOO_MANY_DECIMALS:${item.code}`);
+          }
+          return {
+            lineNo: v.lines.length + index + 1,
+            itemId: item._id,
+            itemCode: item.code,
+            quantity: roundedQuantity,
+          };
+        });
 
       v.voucherNo = await nextVoucherNo(session, rule.prefix, v.voucherDate);
       await v.save({ session });
 
       // Process in itemId order so concurrent vouchers touch items in the same order (fewer write conflicts)
-      const ordered = [...v.lines].sort((a, b) => String(a.itemId).localeCompare(String(b.itemId)));
+      const movements = [
+        ...v.lines.map((line) => ({
+          lineNo: line.lineNo,
+          itemId: line.itemId,
+          itemCode: line.itemCode,
+          quantity: line.quantity,
+        })),
+        ...bomLines,
+      ].sort((a, b) => String(a.itemId).localeCompare(String(b.itemId)) || a.lineNo - b.lineNo);
       const txs: Partial<IStockTransaction>[] = [];
-      for (const l of ordered) {
+      for (const l of movements) {
         const balance = await applyMovement(
           session,
           l.itemId,

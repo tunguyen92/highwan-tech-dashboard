@@ -8,7 +8,6 @@ export type VoucherDocumentLine = {
   key: number;
   itemId: string | null;
   quantity: string;
-  normQuantity?: string;
   remarkQuantity: string;
   remarkUnit: VoucherRemarkUnit;
   note: string;

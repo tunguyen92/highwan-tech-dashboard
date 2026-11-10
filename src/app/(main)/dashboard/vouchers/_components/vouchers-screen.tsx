@@ -78,7 +78,7 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
                 "Receive raw materials from the partner and finished products from production. A voucher only posts to the stock ledger once confirmed.",
               )
             : t(
-                "Issue raw materials to production and ship finished products to the partner. Issuing more than the stock is not allowed.",
+                "Issue goods. Confirming a finished-product issue also deducts its active BOM materials. Issuing more than the stock is not allowed.",
               )
         }
         actions={
@@ -176,14 +176,13 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
               <TableHead>{t("Voucher no.")}</TableHead>
               <TableHead>{t("Type")}</TableHead>
               <TableHead>{t("Date")}</TableHead>
-              <TableHead>{t("Batch")}</TableHead>
               <TableHead className="text-right">{t("Lines")}</TableHead>
               <TableHead>{t("Status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <LoadingRows columns={6} /> : null}
-            {!loading && rows.length === 0 ? <EmptyRow columns={6} text={t("No vouchers yet.")} /> : null}
+            {loading ? <LoadingRows columns={5} /> : null}
+            {!loading && rows.length === 0 ? <EmptyRow columns={5} text={t("No vouchers yet.")} /> : null}
             {!loading &&
               rows.map((row) => (
                 <TableRow key={row._id}>
@@ -203,7 +202,6 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
                   </TableCell>
                   <TableCell>{t(VOUCHER_TYPE_LABEL[row.type])}</TableCell>
                   <TableCell>{formatDate(row.voucherDate)}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.batchNote}</TableCell>
                   <TableCell className="text-right tabular-nums">{row.lineCount}</TableCell>
                   <TableCell>
                     <VoucherStatusBadge status={row.status} />

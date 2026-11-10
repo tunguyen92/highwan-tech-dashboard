@@ -27,9 +27,9 @@ import {
   type VoucherType,
 } from "@/lib/wms/constants";
 import { formatQty, todayYmd, toYmd, ymdToDate } from "@/lib/wms/format";
-import type { FillByBomDTO, VoucherDTO } from "@/lib/wms/types";
+import type { VoucherDTO } from "@/lib/wms/types";
 import { useLoad } from "@/lib/wms/use-load";
-import { confirmVoucherAction, fillByBomAction, getVoucherAction, saveDraftAction } from "@/server/actions/vouchers";
+import { confirmVoucherAction, getVoucherAction, saveDraftAction } from "@/server/actions/vouchers";
 
 import { ConfirmDialog } from "../../_components/wms/confirm-dialogs";
 import { ItemPicker } from "../../_components/wms/item-picker";
@@ -54,12 +54,8 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   const [date, setDate] = useState(todayYmd());
   const [documentNumber, setDocumentNumber] = useState("");
   const [lines, setLines] = useState<VoucherDocumentLine[]>([]);
-  const [productionRef, setProductionRef] = useState<{ productId: string; quantity: string } | null>(null);
-  const [fillProduct, setFillProduct] = useState<string | null>(null);
-  const [fillQuantity, setFillQuantity] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [replaceOpen, setReplaceOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [previewFitZoom, setPreviewFitZoom] = useState(0.3);
   const [previewZoomStep, setPreviewZoomStep] = useState(0);
@@ -119,17 +115,11 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
     setType(loaded.type);
     setDate(toYmd(loaded.voucherDate));
     setDocumentNumber(loaded.documentNumber ?? "");
-    setProductionRef(
-      loaded.productionRef
-        ? { productId: loaded.productionRef.productId, quantity: loaded.productionRef.quantity }
-        : null,
-    );
     setLines(
       loaded.lines.map((line) => ({
         key: nextKey.current++,
         itemId: line.itemId,
         quantity: line.quantity,
-        normQuantity: line.normQuantity,
         remarkQuantity: line.remarkQuantity ?? "",
         remarkUnit: line.remarkUnit ?? VOUCHER_REMARK_UNIT.BOX,
         note: line.note ?? "",
@@ -142,7 +132,9 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   const types = (Object.keys(VOUCHER_RULES) as VoucherType[]).filter(
     (voucherType) => VOUCHER_RULES[voucherType].direction === direction,
   );
-  const pickerItems = items.filter((item) => item.isStocked && rule.allowed.includes(item.type));
+  const pickerItems = items.filter(
+    (item) => item.isStocked && (direction === "OUT" || rule.allowed.includes(item.type)),
+  );
   const status = loaded?.direction === direction ? loaded.status : "DRAFT";
   const editable = canWrite && status === "DRAFT" && (!currentId || loaded?.direction === direction);
   const paperLines = lines.map((line) => ({
@@ -188,51 +180,18 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   }
 
   function changeType(next: VoucherType) {
-    const allowed = VOUCHER_RULES[next].allowed;
+    const nextRule = VOUCHER_RULES[next];
     setLines((current) => {
-      const kept = current.filter(
-        (line) => !line.itemId || allowed.includes(itemById.get(line.itemId)?.type ?? "MATERIAL"),
-      );
+      const kept =
+        nextRule.direction === "OUT"
+          ? current
+          : current.filter(
+              (line) => !line.itemId || nextRule.allowed.includes(itemById.get(line.itemId)?.type ?? "MATERIAL"),
+            );
       if (kept.length !== current.length) toast.info(t("Lines that do not fit the new voucher type were removed."));
       return kept;
     });
-    if (next !== "EXPORT_PRODUCTION") setProductionRef(null);
     setType(next);
-  }
-
-  async function applyFillByNorm() {
-    if (!fillProduct) return;
-    setBusy(true);
-    const result = await unwrapAs<FillByBomDTO>(fillByBomAction(fillProduct, fillQuantity));
-    setBusy(false);
-    if (!result) return;
-
-    setLines(
-      result.lines.map((line) => ({
-        key: nextKey.current++,
-        itemId: line.itemId,
-        quantity: line.quantity,
-        normQuantity: line.normQuantity,
-        remarkQuantity: "",
-        remarkUnit: VOUCHER_REMARK_UNIT.BOX,
-        note: "",
-      })),
-    );
-    setProductionRef({ productId: result.productionRef.productId, quantity: result.productionRef.quantity });
-    setReplaceOpen(false);
-    toast.success(
-      t("Filled {length} line(s) from the BOM. Adjust the actual issued quantity if it differs.", {
-        length: result.lines.length,
-      }),
-    );
-  }
-
-  function fillByNorm() {
-    if (lines.some((line) => line.itemId)) {
-      setReplaceOpen(true);
-      return;
-    }
-    void applyFillByNorm();
   }
 
   async function saveDraft(): Promise<string | null> {
@@ -252,11 +211,9 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         type,
         voucherDate: ymdToDate(date).toISOString(),
         documentNumber: documentNumber.trim() || undefined,
-        productionRef: type === "EXPORT_PRODUCTION" && productionRef ? productionRef : undefined,
         lines: filled.map((line) => ({
           itemId: line.itemId,
           quantity: line.quantity,
-          normQuantity: line.normQuantity,
           remarkQuantity: line.remarkQuantity.trim() || undefined,
           remarkUnit: line.remarkQuantity.trim() ? line.remarkUnit : undefined,
           note: line.note.trim() || undefined,
@@ -443,7 +400,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                   <CalendarDatePicker id="voucher-date" value={date} onChange={setDate} disabled={!editable} />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="voucher-document-number">{t("Document number")}</FieldLabel>
+                  <FieldLabel htmlFor="voucher-document-number">{t("Voucher no.")}</FieldLabel>
                   <Input
                     id="voucher-document-number"
                     value={documentNumber}
@@ -454,33 +411,6 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                   />
                 </Field>
               </FieldGroup>
-
-              {editable && type === "EXPORT_PRODUCTION" ? (
-                <div className="bg-muted/40 flex flex-wrap items-end gap-3 rounded-lg border p-3">
-                  <Field className="min-w-60 flex-1">
-                    <FieldLabel>{t("Fill by norm: finished product")}</FieldLabel>
-                    <ItemPicker
-                      items={items}
-                      value={fillProduct}
-                      allowedTypes={["PRODUCT"]}
-                      disabled={itemsLoading}
-                      onChange={(item) => setFillProduct(item._id)}
-                    />
-                  </Field>
-                  <Field className="w-36">
-                    <FieldLabel htmlFor="voucher-fill-quantity">{t("Quantity")}</FieldLabel>
-                    <QtyInput id="voucher-fill-quantity" value={fillQuantity} onChange={setFillQuantity} />
-                  </Field>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={busy || itemsLoading || !fillProduct || !(Number(fillQuantity) > 0)}
-                    onClick={fillByNorm}
-                  >
-                    {t("Fill by norm")}
-                  </Button>
-                </div>
-              ) : null}
 
               {editable ? (
                 <div className="flex flex-wrap gap-2">
@@ -519,9 +449,6 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                       <TableHead className="w-12">{t("No.")}</TableHead>
                       <TableHead className="min-w-60">{t("Items")}</TableHead>
                       <TableHead className="w-20">{t("UoM")}</TableHead>
-                      {type === "EXPORT_PRODUCTION" ? (
-                        <TableHead className="w-24 text-right">{t("Norm")}</TableHead>
-                      ) : null}
                       <TableHead className="w-32 text-right">{t("Quantity")}</TableHead>
                       <TableHead className="min-w-48">{t("Remark")}</TableHead>
                       {editable ? <TableHead className="w-12" /> : null}
@@ -554,11 +481,6 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                           )}
                         </TableCell>
                         <TableCell>{line.itemId ? itemById.get(line.itemId)?.unit : ""}</TableCell>
-                        {type === "EXPORT_PRODUCTION" ? (
-                          <TableCell className="text-right tabular-nums">
-                            {line.normQuantity ? formatQty(line.normQuantity) : ""}
-                          </TableCell>
-                        ) : null}
                         <TableCell className="text-right">
                           {editable ? (
                             <QtyInput
@@ -618,17 +540,14 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                     ))}
                     {lines.length === 0 ? (
                       <TableRow>
-                        <TableCell
-                          colSpan={(editable ? 6 : 5) + (type === "EXPORT_PRODUCTION" ? 1 : 0)}
-                          className="text-muted-foreground h-20 text-center"
-                        >
+                        <TableCell colSpan={editable ? 6 : 5} className="text-muted-foreground h-20 text-center">
                           {t("No lines yet.")}
                         </TableCell>
                       </TableRow>
                     ) : null}
                     {lines.length > 0 ? (
                       <TableRow className="font-semibold">
-                        <TableCell colSpan={type === "EXPORT_PRODUCTION" ? 4 : 3}>{t("TOTAL")}</TableCell>
+                        <TableCell colSpan={3}>{t("TOTAL")}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatQty(total)}</TableCell>
                         <TableCell colSpan={editable ? 2 : 1} />
                       </TableRow>
@@ -711,7 +630,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         description={
           direction === "OUT"
             ? t(
-                "Stock is deducted immediately and issuing more than the stock is not allowed. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.",
+                "Stock is deducted immediately and issuing more than the stock is not allowed. Finished-product issues also deduct materials from the active BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.",
               )
             : t(
                 "Stock is increased immediately. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.",
@@ -719,14 +638,6 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         }
         confirmLabel={t("Confirm")}
         onConfirm={handleConfirm}
-      />
-      <ConfirmDialog
-        open={replaceOpen}
-        onOpenChange={setReplaceOpen}
-        title={t("Replace the existing lines?")}
-        description={t("The lines you entered will be replaced by the list calculated from the BOM.")}
-        confirmLabel={t("Replace")}
-        onConfirm={applyFillByNorm}
       />
       <PasteLinesDialog open={pasteOpen} onOpenChange={setPasteOpen} items={pickerItems} onApply={addPasted} />
     </>

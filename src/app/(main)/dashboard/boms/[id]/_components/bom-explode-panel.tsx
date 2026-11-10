@@ -11,7 +11,7 @@ import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
 import { downloadCsv } from "@/lib/wms/csv";
 import { formatQty } from "@/lib/wms/format";
-import type { FillByBomDTO } from "@/lib/wms/types";
+import type { BomRequirementsDTO } from "@/lib/wms/types";
 import { explodePreviewAction } from "@/server/actions/boms";
 
 import { tableClass } from "../../../_components/wms/page-card";
@@ -21,12 +21,12 @@ import { QtyInput } from "../../../_components/wms/qty-input";
 export function BomExplodePanel({ outputItemId, outputItemCode }: { outputItemId: string; outputItemCode: string }) {
   const t = useT();
   const [quantity, setQuantity] = useState("100");
-  const [result, setResult] = useState<FillByBomDTO | null>(null);
+  const [result, setResult] = useState<BomRequirementsDTO | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function calculate() {
     setBusy(true);
-    setResult(await unwrapAs<FillByBomDTO>(explodePreviewAction(outputItemId, quantity)));
+    setResult(await unwrapAs<BomRequirementsDTO>(explodePreviewAction(outputItemId, quantity)));
     setBusy(false);
   }
 

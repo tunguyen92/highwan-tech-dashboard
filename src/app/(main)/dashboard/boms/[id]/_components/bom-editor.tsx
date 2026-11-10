@@ -418,7 +418,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
           version: bom.version,
         })}
         description={t(
-          "The system checks for circular references. The active version (if any) becomes 'Superseded'. From now on, 'Fill by norm' on issue vouchers and the reconciliation report use the new version.",
+          "The system checks for circular references. The active version (if any) becomes 'Superseded'. Finished-product issues and the reconciliation report use the new active version.",
         )}
         confirmLabel={t("Activate")}
         onConfirm={activate}

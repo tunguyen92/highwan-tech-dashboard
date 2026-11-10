@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { run } from "@/server/lib/action";
 import { cloneBomAsDraft, createBomDraft, deleteBomDraft, getWhereUsed, updateBomDraft } from "@/server/lib/bom-draft";
-import { fillByBom, getBomTree } from "@/server/lib/bom-explode";
+import { calculateBomRequirements, getBomTree } from "@/server/lib/bom-explode";
 import { activateBom, listBomsPage } from "@/server/lib/bom-service";
 import { bomFilterSchema, bomLinesSchema, bomPageFilterSchema, objectId, qty } from "@/server/lib/schemas";
 import { Bom } from "@/server/models/bom";
@@ -85,7 +85,7 @@ export async function whereUsedAction(itemId: unknown) {
 
 /** Preview of the fully exploded requirement (down to raw materials) for N finished products */
 export async function explodePreviewAction(productId: unknown, quantity: unknown) {
-  return run("bom:read", async () => fillByBom(objectId.parse(productId), qty.parse(quantity)));
+  return run("bom:read", async () => calculateBomRequirements(objectId.parse(productId), qty.parse(quantity)));
 }
 
 /** Multi-level tree of a BOM for the detail screen */

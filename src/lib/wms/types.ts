@@ -101,8 +101,7 @@ export type BomTreeDTO = {
   tree: BomTreeNodeDTO[];
 };
 
-export type FillByBomDTO = {
-  productionRef: { productId: string; productCode: string; productName: string; quantity: string };
+export type BomRequirementsDTO = {
   lines: { itemId: string; itemCode: string; itemName: string; unit: string; quantity: string; normQuantity: string }[];
 };
 

@@ -88,13 +88,11 @@ export const voucherDraftSchema = z.object({
   documentNumber: z.string().trim().max(100).optional(),
   batchNote: z.string().trim().max(200).optional(),
   note: z.string().trim().max(1000).optional(),
-  productionRef: z.object({ productId: objectId, quantity: qty }).optional(),
   lines: z
     .array(
       z.object({
         itemId: objectId,
         quantity: qty,
-        normQuantity: qty.optional(),
         remarkQuantity: qty.optional(),
         remarkUnit: enumOf(VOUCHER_REMARK_UNIT).optional(),
         note: z.string().trim().max(300).optional(),

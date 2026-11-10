@@ -3,8 +3,7 @@
 import { z } from "zod";
 
 import { run } from "@/server/lib/action";
-import { fillByBom } from "@/server/lib/bom-explode";
-import { objectId, qty, voucherDraftSchema, voucherFilterSchema } from "@/server/lib/schemas";
+import { objectId, voucherDraftSchema, voucherFilterSchema } from "@/server/lib/schemas";
 import {
   createDraftVoucher,
   type DraftInput,
@@ -66,11 +65,6 @@ export async function deleteDraftAction(voucherId: unknown) {
     await deleteDraftVoucher(objectId.parse(voucherId));
     return null;
   });
-}
-
-/** "Fill by norm": returns lines for an EXPORT_PRODUCTION voucher; the client puts them into the draft form */
-export async function fillByBomAction(productId: unknown, quantity: unknown) {
-  return run("voucher:write", async () => fillByBom(objectId.parse(productId), qty.parse(quantity)));
 }
 
 export async function confirmVoucherAction(voucherId: unknown) {
