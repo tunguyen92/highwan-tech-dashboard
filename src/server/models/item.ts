@@ -17,7 +17,7 @@ export interface IItem {
   minStock: Types.Decimal128; // Minimum stock level (low-stock alert)
   isStocked: boolean; // Derived from type, never set manually
   excludeFromReconciliation: boolean; // Glue, solder, etc.: excluded from norm reconciliation
-  packSize?: string; // Reference only (e.g. "100 m reel"), not used in calculations
+  packSize?: string; // Reference only (e.g. "box of 20 pieces"), not used in calculations
   note?: string;
   isActive: boolean; // Deactivate instead of deleting
   createdAt: Date;

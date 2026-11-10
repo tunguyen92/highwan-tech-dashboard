@@ -235,7 +235,7 @@ export function ItemFormDialog({
                         <SelectGroup>
                           {ITEM_UNITS.map((value) => (
                             <SelectItem key={value} value={value}>
-                              {value}
+                              {t(value)}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -312,7 +312,7 @@ export function ItemFormDialog({
                 <Input
                   id="item-pack"
                   maxLength={100}
-                  placeholder={t("e.g. 100 m reel")}
+                  placeholder={t("e.g. box of 20 pieces")}
                   aria-invalid={!!errors.packSize}
                   {...form.register("packSize")}
                 />
