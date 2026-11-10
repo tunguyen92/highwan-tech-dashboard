@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/provider";
@@ -24,6 +29,9 @@ type BaseProps = {
   confirmLabel: string;
   destructive?: boolean;
 };
+
+const reasonSchema = z.object({ reason: z.string().trim().min(1, "Enter a reason (required)").max(500) });
+type ReasonFormValues = z.infer<typeof reasonSchema>;
 
 /** Confirmation that stays open while the (async) action runs */
 export function ConfirmDialog({
@@ -81,17 +89,16 @@ export function ReasonDialog({
   onConfirm,
 }: BaseProps & { onConfirm: (reason: string) => Promise<void> }) {
   const t = useT();
-  const [reason, setReason] = useState("");
-  const [busy, setBusy] = useState(false);
+  const form = useForm<ReasonFormValues>({
+    resolver: zodResolver(reasonSchema),
+    mode: "onChange",
+    defaultValues: { reason: "" },
+  });
+  const { errors, isSubmitting, isValid } = form.formState;
 
-  async function handleConfirm() {
-    setBusy(true);
-    try {
-      await onConfirm(reason.trim());
-      setReason("");
-    } finally {
-      setBusy(false);
-    }
+  async function handleConfirm({ reason }: ReasonFormValues) {
+    await onConfirm(reason);
+    form.reset();
   }
 
   return (
@@ -101,23 +108,26 @@ export function ReasonDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
-        <Textarea
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          placeholder={t("Enter a reason (required)")}
-          maxLength={500}
-        />
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>{t("Close")}</AlertDialogCancel>
-          <Button
-            variant={destructive ? "destructive" : "default"}
-            disabled={busy || reason.trim().length === 0}
-            onClick={() => void handleConfirm()}
-          >
-            {busy ? <Spinner /> : null}
-            {confirmLabel}
-          </Button>
-        </AlertDialogFooter>
+        <form noValidate onSubmit={form.handleSubmit(handleConfirm)}>
+          <Field data-invalid={!!errors.reason}>
+            <Textarea
+              maxLength={500}
+              placeholder={t("Enter a reason (required)")}
+              aria-invalid={!!errors.reason}
+              {...form.register("reason")}
+            />
+            {errors.reason?.message ? <FieldError>{t(errors.reason.message)}</FieldError> : null}
+          </Field>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel type="button" disabled={isSubmitting}>
+              {t("Close")}
+            </AlertDialogCancel>
+            <Button type="submit" variant={destructive ? "destructive" : "default"} disabled={isSubmitting || !isValid}>
+              {isSubmitting ? <Spinner /> : null}
+              {confirmLabel}
+            </Button>
+          </AlertDialogFooter>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   );

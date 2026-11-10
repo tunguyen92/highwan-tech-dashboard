@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/provider";
 import { sanitizeQty } from "@/lib/wms/format";
 import type { ItemDTO } from "@/lib/wms/types";
+
+const pasteLinesSchema = z.object({ text: z.string() });
+type PasteLinesFormValues = z.infer<typeof pasteLinesSchema>;
 
 export type PastedRow = { item: ItemDTO; quantity: string };
 
@@ -36,9 +40,13 @@ export function PasteLinesDialog({
   onApply: (rows: PastedRow[]) => void;
 }) {
   const t = useT();
-  const [text, setText] = useState("");
+  const form = useForm<PasteLinesFormValues>({
+    resolver: zodResolver(pasteLinesSchema),
+    defaultValues: { text: "" },
+  });
+  const text = useWatch({ control: form.control, name: "text" });
 
-  function apply() {
+  function apply({ text }: PasteLinesFormValues) {
     const byCode = new Map(items.map((item) => [item.code.toUpperCase(), item]));
     const rows: PastedRow[] = [];
     const unknown: string[] = [];
@@ -60,7 +68,7 @@ export function PasteLinesDialog({
     }
 
     if (rows.length > 0) {
-      setText("");
+      form.reset();
       onOpenChange(false);
     }
   }
@@ -75,20 +83,17 @@ export function PasteLinesDialog({
             {t(". Duplicate codes are added to the existing line.")}
           </DialogDescription>
         </DialogHeader>
-        <Textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          className="min-h-48 font-mono"
-          placeholder={"R1\tt500\nnW1\tt50,5"}
-        />
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("Close")}
-          </Button>
-          <Button onClick={apply} disabled={text.trim() === ""}>
-            {t("Add to list")}
-          </Button>
-        </DialogFooter>
+        <form noValidate onSubmit={form.handleSubmit(apply)}>
+          <Textarea {...form.register("text")} className="min-h-48 font-mono" placeholder={"R1\tt500\nnW1\tt50,5"} />
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t("Close")}
+            </Button>
+            <Button type="submit" disabled={text.trim() === ""}>
+              {t("Add to list")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

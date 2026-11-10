@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Decimal from "decimal.js";
 import ExcelJS from "exceljs";
 import { ArrowLeft, ClipboardPaste, Download, Plus, Printer, Save, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { Button } from "@/components/ui/button";
@@ -22,6 +25,7 @@ import { unwrapAs } from "@/lib/wms/action-client";
 import {
   VOUCHER_REMARK_UNIT,
   VOUCHER_RULES,
+  VOUCHER_TYPE,
   VOUCHER_TYPE_LABEL,
   type VoucherRemarkUnit,
   type VoucherType,
@@ -40,6 +44,26 @@ import { useItems } from "../../_components/wms/use-items";
 import { useCan } from "../../_components/wms/user-context";
 import { formatVoucherRemark, type VoucherDocumentLine, VoucherPaper } from "./voucher-paper";
 
+const voucherTypeValues = Object.values(VOUCHER_TYPE) as [VoucherType, ...VoucherType[]];
+const remarkUnitValues = Object.values(VOUCHER_REMARK_UNIT) as [VoucherRemarkUnit, ...VoucherRemarkUnit[]];
+const voucherDocumentFormSchema = z.object({
+  type: z.enum(voucherTypeValues),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  documentNumber: z.string().max(100),
+  lines: z.array(
+    z.object({
+      key: z.number(),
+      itemId: z.string().nullable(),
+      quantity: z.string(),
+      remarkQuantity: z.string(),
+      remarkUnit: z.enum(remarkUnitValues),
+      note: z.string().max(300),
+    }),
+  ),
+});
+
+type VoucherDocumentFormValues = z.infer<typeof voucherDocumentFormSchema>;
+
 export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN" | "OUT"; voucherId: string | null }) {
   const t = useT();
   const router = useRouter();
@@ -50,16 +74,27 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [currentId, setCurrentId] = useState(voucherId);
-  const [type, setType] = useState<VoucherType>(direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCT");
-  const [date, setDate] = useState(todayYmd());
-  const [documentNumber, setDocumentNumber] = useState("");
-  const [lines, setLines] = useState<VoucherDocumentLine[]>([]);
-  const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [previewFitZoom, setPreviewFitZoom] = useState(0.3);
   const [previewZoomStep, setPreviewZoomStep] = useState(0);
   const previewZoom = previewFitZoom * 1.2 ** previewZoomStep;
+  const form = useForm<VoucherDocumentFormValues>({
+    resolver: zodResolver(voucherDocumentFormSchema),
+    defaultValues: {
+      type: direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCT",
+      date: todayYmd(),
+      documentNumber: "",
+      lines: [],
+    },
+  });
+  const { append, fields, remove, replace } = useFieldArray({ control: form.control, name: "lines" });
+  const type = useWatch({ control: form.control, name: "type" });
+  const date = useWatch({ control: form.control, name: "date" });
+  const documentNumber = useWatch({ control: form.control, name: "documentNumber" });
+  const lines = useWatch({ control: form.control, name: "lines" }) ?? [];
+  const { isSubmitting: busy } = form.formState;
+  const { reset } = form;
 
   useEffect(() => setMounted(true), []);
 
@@ -112,11 +147,11 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
 
   useEffect(() => {
     if (!loaded || loaded.direction !== direction) return;
-    setType(loaded.type);
-    setDate(toYmd(loaded.voucherDate));
-    setDocumentNumber(loaded.documentNumber ?? "");
-    setLines(
-      loaded.lines.map((line) => ({
+    reset({
+      type: loaded.type,
+      date: toYmd(loaded.voucherDate),
+      documentNumber: loaded.documentNumber ?? "",
+      lines: loaded.lines.map((line) => ({
         key: nextKey.current++,
         itemId: line.itemId,
         quantity: line.quantity,
@@ -124,8 +159,8 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         remarkUnit: line.remarkUnit ?? VOUCHER_REMARK_UNIT.BOX,
         note: line.note ?? "",
       })),
-    );
-  }, [direction, loaded]);
+    });
+  }, [direction, loaded, reset]);
 
   const itemById = new Map(items.map((item) => [item._id, item]));
   const rule = VOUCHER_RULES[type];
@@ -148,54 +183,63 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   const listUrl = `/dashboard/vouchers/${direction === "IN" ? "import" : "export"}`;
 
   function patchLine(key: number, patch: Partial<VoucherDocumentLine>) {
-    setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+    const index = form.getValues("lines").findIndex((line) => line.key === key);
+    if (index < 0) return;
+    const options = { shouldDirty: true };
+    if (patch.itemId !== undefined) form.setValue(`lines.${index}.itemId`, patch.itemId, options);
+    if (patch.quantity !== undefined) form.setValue(`lines.${index}.quantity`, patch.quantity, options);
+    if (patch.remarkQuantity !== undefined)
+      form.setValue(`lines.${index}.remarkQuantity`, patch.remarkQuantity, options);
+    if (patch.remarkUnit !== undefined) form.setValue(`lines.${index}.remarkUnit`, patch.remarkUnit, options);
+    if (patch.note !== undefined) form.setValue(`lines.${index}.note`, patch.note, options);
   }
 
   function addPasted(rows: PastedRow[]) {
-    setLines((current) => {
-      let next = current;
-      for (const { item, quantity } of rows) {
-        if (next.some((line) => line.itemId === item._id)) {
-          next = next.map((line) =>
-            line.itemId === item._id
-              ? { ...line, quantity: new Decimal(line.quantity || "0").plus(quantity).toString() }
-              : line,
-          );
-        } else {
-          next = [
-            ...next,
-            {
-              key: nextKey.current++,
-              itemId: item._id,
-              quantity,
-              remarkQuantity: "",
-              remarkUnit: VOUCHER_REMARK_UNIT.BOX,
-              note: "",
-            },
-          ];
-        }
+    let next = form.getValues("lines");
+    for (const { item, quantity } of rows) {
+      if (next.some((line) => line.itemId === item._id)) {
+        next = next.map((line) =>
+          line.itemId === item._id
+            ? { ...line, quantity: new Decimal(line.quantity || "0").plus(quantity).toString() }
+            : line,
+        );
+      } else {
+        next = [
+          ...next,
+          {
+            key: nextKey.current++,
+            itemId: item._id,
+            quantity,
+            remarkQuantity: "",
+            remarkUnit: VOUCHER_REMARK_UNIT.BOX,
+            note: "",
+          },
+        ];
       }
-      return next;
-    });
+    }
+    replace(next);
   }
 
   function changeType(next: VoucherType) {
     const nextRule = VOUCHER_RULES[next];
-    setLines((current) => {
-      const kept =
-        nextRule.direction === "OUT"
-          ? current
-          : current.filter(
-              (line) => !line.itemId || nextRule.allowed.includes(itemById.get(line.itemId)?.type ?? "MATERIAL"),
-            );
-      if (kept.length !== current.length) toast.info(t("Lines that do not fit the new voucher type were removed."));
-      return kept;
-    });
-    setType(next);
+    const current = form.getValues("lines");
+    const kept =
+      nextRule.direction === "OUT"
+        ? current
+        : current.filter(
+            (line) => !line.itemId || nextRule.allowed.includes(itemById.get(line.itemId)?.type ?? "MATERIAL"),
+          );
+    if (kept.length !== current.length) {
+      toast.info(t("Lines that do not fit the new voucher type were removed."));
+      replace(kept);
+    }
+    form.setValue("type", next, { shouldDirty: true });
   }
 
-  async function saveDraft(): Promise<string | null> {
-    const filled = lines.filter((line): line is VoucherDocumentLine & { itemId: string } => Boolean(line.itemId));
+  async function saveDraft(values: VoucherDocumentFormValues): Promise<string | null> {
+    const filled = values.lines.filter((line): line is VoucherDocumentLine & { itemId: string } =>
+      Boolean(line.itemId),
+    );
     if (filled.length === 0) {
       toast.error(t("The voucher needs at least one line with an item."));
       return null;
@@ -205,12 +249,11 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
       return null;
     }
 
-    setBusy(true);
     const result = await unwrapAs<{ id: string }>(
       saveDraftAction(currentId, {
-        type,
-        voucherDate: ymdToDate(date).toISOString(),
-        documentNumber: documentNumber.trim() || undefined,
+        type: values.type,
+        voucherDate: ymdToDate(values.date).toISOString(),
+        documentNumber: values.documentNumber.trim() || undefined,
         lines: filled.map((line) => ({
           itemId: line.itemId,
           quantity: line.quantity,
@@ -220,7 +263,6 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         })),
       }),
     );
-    setBusy(false);
     if (!result) return null;
 
     setCurrentId(result.id);
@@ -229,24 +271,37 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   }
 
   async function handleSave() {
-    if (await saveDraft()) {
-      toast.success(t("Draft voucher saved."));
-      reload();
-    }
+    await form.handleSubmit(
+      async (values) => {
+        if (await saveDraft(values)) {
+          toast.success(t("Draft voucher saved."));
+          reload();
+        }
+      },
+      () => toast.error(t("Please check the voucher fields.")),
+    )();
   }
 
   async function handleConfirm() {
-    const id = await saveDraft();
-    if (!id) {
-      setConfirmOpen(false);
-      return;
-    }
-    const result = await unwrapAs<{ id: string; voucherNo: string }>(confirmVoucherAction(id));
-    setConfirmOpen(false);
-    if (result) {
-      toast.success(t("Voucher {voucherNo} confirmed. Stock has been updated.", { voucherNo: result.voucherNo }));
-      reload();
-    }
+    await form.handleSubmit(
+      async (values) => {
+        const id = await saveDraft(values);
+        if (!id) {
+          setConfirmOpen(false);
+          return;
+        }
+        const result = await unwrapAs<{ id: string; voucherNo: string }>(confirmVoucherAction(id));
+        setConfirmOpen(false);
+        if (result) {
+          toast.success(t("Voucher {voucherNo} confirmed. Stock has been updated.", { voucherNo: result.voucherNo }));
+          reload();
+        }
+      },
+      () => {
+        setConfirmOpen(false);
+        toast.error(t("Please check the voucher fields."));
+      },
+    )();
   }
 
   function printDocument() {
@@ -397,17 +452,21 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="voucher-date">{t("Voucher date")}</FieldLabel>
-                  <CalendarDatePicker id="voucher-date" value={date} onChange={setDate} disabled={!editable} />
+                  <CalendarDatePicker
+                    id="voucher-date"
+                    value={date}
+                    onChange={(value) => form.setValue("date", value, { shouldDirty: true })}
+                    disabled={!editable}
+                  />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="voucher-document-number">{t("Voucher no.")}</FieldLabel>
                   <Input
                     id="voucher-document-number"
-                    value={documentNumber}
-                    onChange={(event) => setDocumentNumber(event.target.value)}
                     maxLength={100}
                     disabled={!editable}
                     placeholder="BD27/08-225"
+                    {...form.register("documentNumber")}
                   />
                 </Field>
               </FieldGroup>
@@ -419,17 +478,14 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                     variant="outline"
                     disabled={itemsLoading}
                     onClick={() =>
-                      setLines((current) => [
-                        ...current,
-                        {
-                          key: nextKey.current++,
-                          itemId: null,
-                          quantity: "",
-                          remarkQuantity: "",
-                          remarkUnit: VOUCHER_REMARK_UNIT.BOX,
-                          note: "",
-                        },
-                      ])
+                      append({
+                        key: nextKey.current++,
+                        itemId: null,
+                        quantity: "",
+                        remarkQuantity: "",
+                        remarkUnit: VOUCHER_REMARK_UNIT.BOX,
+                        note: "",
+                      })
                     }
                   >
                     <Plus data-icon="inline-start" />
@@ -443,7 +499,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
               ) : null}
 
               <div className="overflow-x-auto rounded-lg border">
-                <Table className="min-w-[680px]">
+                <Table className="min-w-170">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">{t("No.")}</TableHead>
@@ -455,89 +511,93 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {lines.map((line, index) => (
-                      <TableRow key={line.key}>
-                        <TableCell className="text-muted-foreground tabular-nums">{index + 1}</TableCell>
-                        <TableCell>
-                          {editable ? (
-                            <ItemPicker
-                              items={pickerItems}
-                              value={line.itemId}
-                              disabled={itemsLoading}
-                              excludeIds={lines
-                                .filter(
-                                  (item): item is VoucherDocumentLine & { itemId: string } =>
-                                    item.key !== line.key && Boolean(item.itemId),
-                                )
-                                .map((item) => item.itemId)}
-                              onChange={(item) => patchLine(line.key, { itemId: item._id })}
-                            />
-                          ) : (
-                            <span>
-                              {line.itemId
-                                ? `${itemById.get(line.itemId)?.code ?? ""} · ${itemById.get(line.itemId)?.name ?? ""}`
-                                : ""}
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>{line.itemId ? itemById.get(line.itemId)?.unit : ""}</TableCell>
-                        <TableCell className="text-right">
-                          {editable ? (
-                            <QtyInput
-                              value={line.quantity}
-                              onChange={(quantity) => patchLine(line.key, { quantity })}
-                            />
-                          ) : (
-                            <span className="tabular-nums">{formatQty(line.quantity)}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editable ? (
-                            <div className="flex items-center gap-2">
-                              <QtyInput
-                                aria-label={`${t("Remark quantity")} ${index + 1}`}
-                                value={line.remarkQuantity}
-                                onChange={(remarkQuantity) => patchLine(line.key, { remarkQuantity })}
-                              />
-                              <Select
-                                value={line.remarkUnit}
-                                onValueChange={(value) =>
-                                  patchLine(line.key, { remarkUnit: value as VoucherRemarkUnit })
-                                }
-                              >
-                                <SelectTrigger className="w-24" aria-label={`${t("Remark package")} ${index + 1}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    {Object.values(VOUCHER_REMARK_UNIT).map((unit) => (
-                                      <SelectItem key={unit} value={unit}>
-                                        {unit}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ) : (
-                            formatVoucherRemark(line)
-                          )}
-                        </TableCell>
-                        {editable ? (
+                    {fields.map((field, index) => {
+                      const line = lines[index];
+                      if (!line) return null;
+                      return (
+                        <TableRow key={field.id}>
+                          <TableCell className="text-muted-foreground tabular-nums">{index + 1}</TableCell>
                           <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={t("Delete line")}
-                              onClick={() => setLines((current) => current.filter((item) => item.key !== line.key))}
-                            >
-                              <Trash2 />
-                            </Button>
+                            {editable ? (
+                              <ItemPicker
+                                items={pickerItems}
+                                value={line.itemId}
+                                disabled={itemsLoading}
+                                excludeIds={lines
+                                  .filter(
+                                    (item): item is VoucherDocumentLine & { itemId: string } =>
+                                      item.key !== line.key && Boolean(item.itemId),
+                                  )
+                                  .map((item) => item.itemId)}
+                                onChange={(item) => patchLine(line.key, { itemId: item._id })}
+                              />
+                            ) : (
+                              <span>
+                                {line.itemId
+                                  ? `${itemById.get(line.itemId)?.code ?? ""} · ${itemById.get(line.itemId)?.name ?? ""}`
+                                  : ""}
+                              </span>
+                            )}
                           </TableCell>
-                        ) : null}
-                      </TableRow>
-                    ))}
+                          <TableCell>{line.itemId ? itemById.get(line.itemId)?.unit : ""}</TableCell>
+                          <TableCell className="text-right">
+                            {editable ? (
+                              <QtyInput
+                                value={line.quantity}
+                                onChange={(quantity) => patchLine(line.key, { quantity })}
+                              />
+                            ) : (
+                              <span className="tabular-nums">{formatQty(line.quantity)}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editable ? (
+                              <div className="flex items-center gap-2">
+                                <QtyInput
+                                  aria-label={`${t("Remark quantity")} ${index + 1}`}
+                                  value={line.remarkQuantity}
+                                  onChange={(remarkQuantity) => patchLine(line.key, { remarkQuantity })}
+                                />
+                                <Select
+                                  value={line.remarkUnit}
+                                  onValueChange={(value) =>
+                                    patchLine(line.key, { remarkUnit: value as VoucherRemarkUnit })
+                                  }
+                                >
+                                  <SelectTrigger className="w-24" aria-label={`${t("Remark package")} ${index + 1}`}>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectGroup>
+                                      {Object.values(VOUCHER_REMARK_UNIT).map((unit) => (
+                                        <SelectItem key={unit} value={unit}>
+                                          {unit}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectGroup>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : (
+                              formatVoucherRemark(line)
+                            )}
+                          </TableCell>
+                          {editable ? (
+                            <TableCell>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={t("Delete line")}
+                                onClick={() => remove(index)}
+                              >
+                                <Trash2 />
+                              </Button>
+                            </TableCell>
+                          ) : null}
+                        </TableRow>
+                      );
+                    })}
                     {lines.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={editable ? 6 : 5} className="text-muted-foreground h-20 text-center">

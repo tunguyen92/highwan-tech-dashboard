@@ -16,7 +16,6 @@ import { tableClass } from "../../_components/wms/page-card";
 import { QtyInput } from "../../_components/wms/qty-input";
 
 export type VoucherSheetLine = {
-  key: number;
   itemId: string | null;
   quantity: string;
   remarkQuantity: string;
@@ -26,6 +25,7 @@ export type VoucherSheetLine = {
 
 export function VoucherSheetLines({
   lines,
+  fieldIds,
   pickerItems,
   itemById,
   editable,
@@ -35,13 +35,14 @@ export function VoucherSheetLines({
   onRemoveLine,
 }: {
   lines: VoucherSheetLine[];
+  fieldIds: string[];
   pickerItems: ItemDTO[];
   itemById: Map<string, ItemDTO>;
   editable: boolean;
   onAddLine: () => void;
   onOpenPaste: () => void;
-  onPatchLine: (key: number, patch: Partial<VoucherSheetLine>) => void;
-  onRemoveLine: (key: number) => void;
+  onPatchLine: (index: number, patch: Partial<VoucherSheetLine>) => void;
+  onRemoveLine: (index: number) => void;
 }) {
   const t = useT();
 
@@ -82,7 +83,7 @@ export function VoucherSheetLines({
             {lines.map((line, index) => {
               const item = line.itemId ? itemById.get(line.itemId) : undefined;
               return (
-                <TableRow key={line.key}>
+                <TableRow key={fieldIds[index]}>
                   <TableCell className="text-muted-foreground tabular-nums">{index + 1}</TableCell>
                   <TableCell>
                     {editable ? (
@@ -90,9 +91,10 @@ export function VoucherSheetLines({
                         items={pickerItems}
                         value={line.itemId}
                         excludeIds={lines
-                          .filter((other) => other.key !== line.key && other.itemId)
+                          .filter((_, otherIndex) => otherIndex !== index)
+                          .filter((other) => other.itemId)
                           .map((other) => other.itemId as string)}
-                        onChange={(picked) => onPatchLine(line.key, { itemId: picked._id })}
+                        onChange={(picked) => onPatchLine(index, { itemId: picked._id })}
                       />
                     ) : (
                       <span>
@@ -104,10 +106,7 @@ export function VoucherSheetLines({
                   <TableCell>{item?.unit}</TableCell>
                   <TableCell className="text-right">
                     {editable ? (
-                      <QtyInput
-                        value={line.quantity}
-                        onChange={(value) => onPatchLine(line.key, { quantity: value })}
-                      />
+                      <QtyInput value={line.quantity} onChange={(value) => onPatchLine(index, { quantity: value })} />
                     ) : (
                       <span className="font-medium tabular-nums">{formatQty(line.quantity)}</span>
                     )}
@@ -117,7 +116,7 @@ export function VoucherSheetLines({
                       <Input
                         value={line.note}
                         maxLength={300}
-                        onChange={(event) => onPatchLine(line.key, { note: event.target.value })}
+                        onChange={(event) => onPatchLine(index, { note: event.target.value })}
                       />
                     ) : (
                       <span className="text-muted-foreground">{line.note}</span>
@@ -129,11 +128,11 @@ export function VoucherSheetLines({
                         <QtyInput
                           aria-label={`${t("Remark quantity")} ${index + 1}`}
                           value={line.remarkQuantity}
-                          onChange={(remarkQuantity) => onPatchLine(line.key, { remarkQuantity })}
+                          onChange={(remarkQuantity) => onPatchLine(index, { remarkQuantity })}
                         />
                         <Select
                           value={line.remarkUnit}
-                          onValueChange={(value) => onPatchLine(line.key, { remarkUnit: value as VoucherRemarkUnit })}
+                          onValueChange={(value) => onPatchLine(index, { remarkUnit: value as VoucherRemarkUnit })}
                         >
                           <SelectTrigger className="w-24" aria-label={`${t("Remark package")} ${index + 1}`}>
                             <SelectValue />
@@ -161,7 +160,7 @@ export function VoucherSheetLines({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={t("Delete line")}
-                        onClick={() => onRemoveLine(line.key)}
+                        onClick={() => onRemoveLine(index)}
                       >
                         <Trash2 />
                       </Button>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
 import { useRouter } from "next/navigation";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
@@ -23,6 +24,9 @@ import type { ItemDTO } from "@/lib/wms/types";
 import { createBomDraftAction } from "@/server/actions/boms";
 
 import { ItemPicker } from "../../_components/wms/item-picker";
+
+const createBomFormSchema = z.object({ itemId: z.string().min(1, "Select an item.") });
+type CreateBomFormValues = z.infer<typeof createBomFormSchema>;
 
 /** Starts an empty draft BOM for a finished product or a semi-finished item, then opens the editor */
 export function CreateBomDialog({
@@ -36,14 +40,15 @@ export function CreateBomDialog({
 }) {
   const t = useT();
   const router = useRouter();
-  const [itemId, setItemId] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const form = useForm<CreateBomFormValues>({
+    resolver: zodResolver(createBomFormSchema),
+    mode: "onChange",
+    defaultValues: { itemId: "" },
+  });
+  const { isSubmitting, isValid } = form.formState;
 
-  async function create() {
-    if (!itemId) return;
-    setBusy(true);
+  async function create({ itemId }: CreateBomFormValues) {
     const result = await unwrapAs<{ id: string }>(createBomDraftAction(itemId, []));
-    setBusy(false);
     if (result) {
       toast.success(t("Draft created. Now add the components."));
       onOpenChange(false);
@@ -62,24 +67,34 @@ export function CreateBomDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-        <Field>
-          <FieldLabel>{t("Finished / semi-finished item")}</FieldLabel>
-          <ItemPicker
-            items={items}
-            value={itemId}
-            allowedTypes={["PRODUCT", "SEMI"]}
-            onChange={(item) => setItemId(item._id)}
+        <form noValidate onSubmit={form.handleSubmit(create)} className="flex flex-col gap-4">
+          <Controller
+            control={form.control}
+            name="itemId"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>{t("Finished / semi-finished item")}</FieldLabel>
+                <ItemPicker
+                  items={items}
+                  value={field.value || null}
+                  allowedTypes={["PRODUCT", "SEMI"]}
+                  disabled={isSubmitting}
+                  onChange={(item) => field.onChange(item._id)}
+                />
+                {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+              </Field>
+            )}
           />
-        </Field>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-            {t("Close")}
-          </Button>
-          <Button onClick={() => void create()} disabled={!itemId || busy}>
-            {busy ? <Spinner /> : null}
-            {t("Create draft")}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              {t("Close")}
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !isValid}>
+              {isSubmitting ? <Spinner /> : null}
+              {t("Create draft")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

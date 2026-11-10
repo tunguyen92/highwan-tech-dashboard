@@ -5,19 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Decimal from "decimal.js";
-import { ArrowLeft, ClipboardPaste, CopyPlus, Plus, Rocket, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CopyPlus, Rocket, Save, Trash2 } from "lucide-react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useT } from "@/lib/i18n/provider";
 import { unwrap, unwrapAs } from "@/lib/wms/action-client";
-import { formatDate, formatQty } from "@/lib/wms/format";
-import type { BomDTO, ItemDTO } from "@/lib/wms/types";
+import { formatDate } from "@/lib/wms/format";
+import type { BomDTO } from "@/lib/wms/types";
 import { useLoad } from "@/lib/wms/use-load";
 import {
   activateBomAction,
@@ -28,26 +29,31 @@ import {
 } from "@/server/actions/boms";
 
 import { ConfirmDialog } from "../../../_components/wms/confirm-dialogs";
-import { ItemPicker } from "../../../_components/wms/item-picker";
-import { PageCard, tableClass } from "../../../_components/wms/page-card";
+import { PageCard } from "../../../_components/wms/page-card";
 import { type PastedRow, PasteLinesDialog } from "../../../_components/wms/paste-lines-dialog";
-import { QtyInput } from "../../../_components/wms/qty-input";
 import { BomStatusBadge } from "../../../_components/wms/status-badges";
 import { useItems } from "../../../_components/wms/use-items";
 import { useCan } from "../../../_components/wms/user-context";
+import { type BomEditorLine, BomEditorLines } from "./bom-editor-lines";
 import { BomExplodePanel } from "./bom-explode-panel";
 import { BomTree } from "./bom-tree";
 
-type LineState = {
-  key: number;
-  itemId: string | null;
-  itemCode: string;
-  itemName: string;
-  unit: string;
-  quantity: string;
-  scrapPercent: string;
-  note: string;
-};
+const bomEditorSchema = z.object({
+  lines: z.array(
+    z.object({
+      key: z.number(),
+      itemId: z.string().nullable(),
+      itemCode: z.string(),
+      itemName: z.string(),
+      unit: z.string(),
+      quantity: z.string(),
+      scrapPercent: z.string(),
+      note: z.string().max(300),
+    }),
+  ),
+});
+
+type BomEditorFormValues = z.infer<typeof bomEditorSchema>;
 
 export function BomEditor({ bomId }: { bomId: string }) {
   const t = useT();
@@ -58,17 +64,31 @@ export function BomEditor({ bomId }: { bomId: string }) {
   const { data: bom, loading, reload } = useLoad(() => unwrapAs<BomDTO>(getBomAction(bomId)), [bomId]);
 
   const nextKey = useRef(1);
-  const [lines, setLines] = useState<LineState[]>([]);
-  const [dirty, setDirty] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [confirm, setConfirm] = useState<"activate" | "delete" | "clone" | null>(null);
+  const form = useForm<BomEditorFormValues>({
+    resolver: zodResolver(bomEditorSchema),
+    defaultValues: { lines: [] },
+  });
+  const {
+    append,
+    fields,
+    remove: removeLine,
+    replace,
+  } = useFieldArray({
+    control: form.control,
+    name: "lines",
+    keyName: "fieldKey",
+  });
+  const lines = useWatch({ control: form.control, name: "lines" }) ?? [];
+  const { isDirty: dirty, isSubmitting: busy } = form.formState;
+  const { reset } = form;
 
   // Reset the local editor state whenever a fresh copy of the BOM arrives
   useEffect(() => {
     if (!bom) return;
-    setLines(
-      bom.lines.map((line) => ({
+    reset({
+      lines: bom.lines.map((line) => ({
         key: nextKey.current++,
         itemId: line.itemId,
         itemCode: line.itemCode,
@@ -78,79 +98,84 @@ export function BomEditor({ bomId }: { bomId: string }) {
         scrapPercent: String(line.scrapPercent),
         note: line.note ?? "",
       })),
-    );
-    setDirty(false);
-  }, [bom]);
+    });
+  }, [bom, reset]);
 
   if (loading && !bom) return <Skeleton className="h-64 w-full" />;
   if (!bom) return <p className="text-muted-foreground">{t("BOM not found.")}</p>;
 
   const editable = bom.status === "DRAFT" && canWrite;
   const itemById = new Map(items.map((item) => [item._id, item]));
-  const itemByCode = new Map(items.map((item) => [item.code, item]));
   const outputItem = itemById.get(bom.outputItemId);
 
-  function patchLine(key: number, patch: Partial<LineState>) {
-    setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
-    setDirty(true);
+  function patchLine(key: number, patch: Partial<BomEditorLine>) {
+    const index = form.getValues("lines").findIndex((line) => line.key === key);
+    if (index < 0) return;
+    const options = { shouldDirty: true };
+    if (patch.itemId !== undefined) form.setValue(`lines.${index}.itemId`, patch.itemId, options);
+    if (patch.itemCode !== undefined) form.setValue(`lines.${index}.itemCode`, patch.itemCode, options);
+    if (patch.itemName !== undefined) form.setValue(`lines.${index}.itemName`, patch.itemName, options);
+    if (patch.unit !== undefined) form.setValue(`lines.${index}.unit`, patch.unit, options);
+    if (patch.quantity !== undefined) form.setValue(`lines.${index}.quantity`, patch.quantity, options);
+    if (patch.scrapPercent !== undefined) form.setValue(`lines.${index}.scrapPercent`, patch.scrapPercent, options);
+    if (patch.note !== undefined) form.setValue(`lines.${index}.note`, patch.note, options);
   }
 
   function addPasted(rows: PastedRow[]) {
-    setLines((current) => {
-      let next = current;
-      for (const { item, quantity } of rows) {
-        if (next.some((line) => line.itemId === item._id)) {
-          next = next.map((line) =>
-            line.itemId === item._id
-              ? { ...line, quantity: new Decimal(line.quantity || "0").plus(quantity).toString() }
-              : line,
-          );
-        } else {
-          next = [
-            ...next,
-            {
-              key: nextKey.current++,
-              itemId: item._id,
-              itemCode: item.code,
-              itemName: item.name,
-              unit: item.unit,
-              quantity,
-              scrapPercent: "0",
-              note: "",
-            },
-          ];
-        }
+    let next = form.getValues("lines");
+    for (const { item, quantity } of rows) {
+      if (next.some((line) => line.itemId === item._id)) {
+        next = next.map((line) =>
+          line.itemId === item._id
+            ? { ...line, quantity: new Decimal(line.quantity || "0").plus(quantity).toString() }
+            : line,
+        );
+      } else {
+        next = [
+          ...next,
+          {
+            key: nextKey.current++,
+            itemId: item._id,
+            itemCode: item.code,
+            itemName: item.name,
+            unit: item.unit,
+            quantity,
+            scrapPercent: "0",
+            note: "",
+          },
+        ];
       }
-      return next;
-    });
-    setDirty(true);
+    }
+    replace(next);
   }
 
   /** Validates and saves the draft. Returns true on success. */
   async function save(): Promise<boolean> {
-    const filled = lines.filter((line) => line.itemId);
-    if (filled.some((line) => !(Number(line.quantity) > 0))) {
-      toast.error(t("Every line needs a quantity greater than 0."));
-      return false;
-    }
+    let saved = false;
+    await form.handleSubmit(async ({ lines: values }) => {
+      const filled = values.filter((line): line is BomEditorLine & { itemId: string } => Boolean(line.itemId));
+      if (filled.some((line) => !(Number(line.quantity) > 0))) {
+        toast.error(t("Every line needs a quantity greater than 0."));
+        return;
+      }
 
-    setBusy(true);
-    const result = await unwrap(
-      updateBomDraftAction(
-        bomId,
-        filled.map((line) => ({
-          itemId: line.itemId,
-          quantity: line.quantity,
-          scrapPercent: Number(line.scrapPercent || "0"),
-          note: line.note.trim() === "" ? undefined : line.note.trim(),
-        })),
-      ),
-    );
-    setBusy(false);
-    if (!result) return false;
-    toast.success(t("Draft saved."));
-    reload();
-    return true;
+      const result = await unwrap(
+        updateBomDraftAction(
+          bomId,
+          filled.map((line) => ({
+            itemId: line.itemId,
+            quantity: line.quantity,
+            scrapPercent: Number(line.scrapPercent || "0"),
+            note: line.note.trim() === "" ? undefined : line.note.trim(),
+          })),
+        ),
+      );
+      if (!result) return;
+      toast.success(t("Draft saved."));
+      reload();
+      saved = true;
+    })();
+    return saved;
   }
 
   async function activate() {
@@ -238,153 +263,29 @@ export function BomEditor({ bomId }: { bomId: string }) {
           </div>
 
           <TabsContent value="lines" className="flex flex-col gap-3">
-            {editable ? (
-              <div className="flex flex-wrap gap-2 px-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setLines((current) => [
-                      ...current,
-                      {
-                        key: nextKey.current++,
-                        itemId: null,
-                        itemCode: "",
-                        itemName: "",
-                        unit: "",
-                        quantity: "",
-                        scrapPercent: "0",
-                        note: "",
-                      },
-                    ]);
-                    setDirty(true);
-                  }}
-                >
-                  <Plus /> {t("Add line")}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setPasteOpen(true)}>
-                  <ClipboardPaste /> {t("Paste from Excel")}
-                </Button>
-              </div>
-            ) : null}
-
-            <Table className={tableClass}>
-              <TableHeader className="[&_tr]:border-t">
-                <TableRow>
-                  <TableHead className="w-[38%]">{t("Components")}</TableHead>
-                  <TableHead className="w-36 text-right">{t("Qty / 1 unit")}</TableHead>
-                  <TableHead className="w-20">{t("UoM")}</TableHead>
-                  <TableHead className="w-32 text-right">{t("Allowed scrap (%)")}</TableHead>
-                  <TableHead>{t("Notes")}</TableHead>
-                  {editable ? <TableHead className="w-10" /> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lines.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-muted-foreground h-24 text-center">
-                      {t("No components yet.")}
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-                {lines.map((line) => {
-                  const item: ItemDTO | undefined =
-                    (line.itemId ? itemById.get(line.itemId) : undefined) ?? itemByCode.get(line.itemCode);
-                  return (
-                    <TableRow key={line.key}>
-                      <TableCell>
-                        {editable ? (
-                          <ItemPicker
-                            items={items}
-                            value={line.itemId}
-                            placeholder={
-                              item
-                                ? `${item.code} · ${item.name}`
-                                : line.itemCode
-                                  ? `${line.itemCode}${line.itemName ? ` · ${line.itemName}` : ""}`
-                                  : undefined
-                            }
-                            allowedTypes={["MATERIAL", "SEMI"]}
-                            excludeIds={[
-                              bom.outputItemId,
-                              ...lines.filter((l) => l.key !== line.key && l.itemId).map((l) => l.itemId as string),
-                            ]}
-                            onChange={(picked) =>
-                              patchLine(line.key, {
-                                itemId: picked._id,
-                                itemCode: picked.code,
-                                itemName: picked.name,
-                                unit: picked.unit,
-                              })
-                            }
-                          />
-                        ) : (
-                          <span>
-                            <span className="font-medium">{line.itemCode || item?.code}</span>
-                            <span className="text-muted-foreground"> • {line.itemName || item?.name}</span>
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {editable ? (
-                          <QtyInput
-                            value={line.quantity}
-                            onChange={(value) => patchLine(line.key, { quantity: value })}
-                          />
-                        ) : (
-                          <span className="tabular-nums">{formatQty(line.quantity)}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{line.unit || item?.unit}</TableCell>
-                      <TableCell className="text-right">
-                        {editable ? (
-                          <QtyInput
-                            value={line.scrapPercent}
-                            onChange={(value) => patchLine(line.key, { scrapPercent: value })}
-                          />
-                        ) : (
-                          <span className="tabular-nums">{line.scrapPercent}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editable ? (
-                          <Input
-                            value={line.note}
-                            onChange={(e) => patchLine(line.key, { note: e.target.value })}
-                            maxLength={300}
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">{line.note}</span>
-                        )}
-                      </TableCell>
-                      {editable ? (
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={t("Delete line")}
-                            onClick={() => {
-                              setLines((current) => current.filter((l) => l.key !== line.key));
-                              setDirty(true);
-                            }}
-                          >
-                            <Trash2 />
-                          </Button>
-                        </TableCell>
-                      ) : null}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            <p className="text-muted-foreground px-4 text-xs">
-              {t("Quantity per 1 unit of {v}", { v: bom.outputItemCode })}
-            </p>
-            <p className="text-muted-foreground px-4 text-xs">
-              {t(
-                "Each quantity is expressed in the component's own unit of measure. Allowed scrap is the threshold that keeps the reconciliation report from raising false alarms; leave 0 to use the general tolerance.",
-              )}
-            </p>
+            <BomEditorLines
+              lines={lines}
+              rowKeys={fields.map((field) => field.fieldKey)}
+              items={items}
+              outputItemId={bom.outputItemId}
+              outputItemCode={bom.outputItemCode}
+              editable={editable}
+              onAddLine={() =>
+                append({
+                  key: nextKey.current++,
+                  itemId: null,
+                  itemCode: "",
+                  itemName: "",
+                  unit: "",
+                  quantity: "",
+                  scrapPercent: "0",
+                  note: "",
+                })
+              }
+              onOpenPaste={() => setPasteOpen(true)}
+              onPatchLine={patchLine}
+              onRemoveLine={removeLine}
+            />
           </TabsContent>
 
           <TabsContent value="tree">

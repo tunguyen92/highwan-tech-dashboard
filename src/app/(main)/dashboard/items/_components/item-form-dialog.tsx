@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
@@ -21,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/provider";
 import { unwrapAs } from "@/lib/wms/action-client";
-import { ITEM_TYPE_LABEL, type ItemType } from "@/lib/wms/constants";
+import { ITEM_TYPE_LABEL, type ItemType, QTY_MAX_DECIMAL_PLACES } from "@/lib/wms/constants";
 import { formatPrice, parsePriceInput } from "@/lib/wms/format";
 import type { ItemDTO } from "@/lib/wms/types";
 import { createItemAction, updateItemAction } from "@/server/actions/items";
@@ -31,6 +34,34 @@ import { QtyInput } from "../../_components/wms/qty-input";
 const blankToUndefined = (value: string) => (value.trim() === "" ? undefined : value.trim());
 const ITEM_UNITS = ["BOTTLE", "BOX", "EA", "KG", "M", "PRODUCT", "ROLL", "SET", "TIN"];
 const PRODUCTION_LINES = ["BIDET", "AL", "LW ASSY", "LW-BT"];
+const itemTypeValues = Object.keys(ITEM_TYPE_LABEL) as [ItemType, ...ItemType[]];
+const quantityPattern = new RegExp(`^\\d+(\\.\\d{1,${QTY_MAX_DECIMAL_PLACES}})?$`);
+const pricePattern = /^\d+(\.\d{1,2})?$/;
+
+const itemFormSchema = z.object({
+  code: z.string().trim().min(1, "Enter the code.").max(50),
+  name: z.string().trim().min(1, "Enter the name.").max(200),
+  spec: z.string().max(100),
+  productionLine: z.string().max(100),
+  price: z
+    .string()
+    .max(100)
+    .refine((value) => value === "" || pricePattern.test(value), "Enter a price with up to 2 decimal places."),
+  type: z.enum(itemTypeValues),
+  unit: z.string().trim().min(1, "Select a unit.").max(20),
+  decimalPlaces: z
+    .string()
+    .refine(
+      (value) => /^\d+$/.test(value) && Number(value) <= QTY_MAX_DECIMAL_PLACES,
+      `Choose between 0 and ${QTY_MAX_DECIMAL_PLACES} decimal places.`,
+    ),
+  minStock: z.string().refine((value) => value === "" || quantityPattern.test(value), "Enter a valid quantity."),
+  exclude: z.boolean(),
+  packSize: z.string().max(100),
+  note: z.string().max(500),
+});
+
+type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 /** Create / edit one item. Mounted with a `key`, so its state always starts from the given item. */
 export function ItemFormDialog({
@@ -43,42 +74,45 @@ export function ItemFormDialog({
   onSaved: () => void;
 }) {
   const t = useT();
-  const [code, setCode] = useState(item?.code ?? "");
-  const [name, setName] = useState(item?.name ?? "");
-  const [spec, setSpec] = useState(item?.spec ?? "");
-  const [productionLine, setProductionLine] = useState(item?.productionLine ?? "");
-  const [price, setPrice] = useState(item?.price ?? "");
-  const [type, setType] = useState<ItemType>(item?.type ?? "MATERIAL");
-  const [unit, setUnit] = useState(item?.unit ?? "");
-  const [decimalPlaces, setDecimalPlaces] = useState(String(item?.decimalPlaces ?? 0));
-  const [minStock, setMinStock] = useState(item?.minStock ?? "0");
-  const [exclude, setExclude] = useState(item?.excludeFromReconciliation ?? false);
-  const [packSize, setPackSize] = useState(item?.packSize ?? "");
-  const [note, setNote] = useState(item?.note ?? "");
-  const [busy, setBusy] = useState(false);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  const form = useForm<ItemFormValues>({
+    resolver: zodResolver(itemFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      code: item?.code ?? "",
+      name: item?.name ?? "",
+      spec: item?.spec ?? "",
+      productionLine: item?.productionLine ?? "",
+      price: item?.price ?? "",
+      type: item?.type ?? "MATERIAL",
+      unit: item?.unit ?? "",
+      decimalPlaces: String(item?.decimalPlaces ?? 0),
+      minStock: item?.minStock ?? "0",
+      exclude: item?.excludeFromReconciliation ?? false,
+      packSize: item?.packSize ?? "",
+      note: item?.note ?? "",
+    },
+  });
+  const { errors, isSubmitting, isValid } = form.formState;
+  const type = useWatch({ control: form.control, name: "type" });
 
-  const canSubmit = code.trim() !== "" && name.trim() !== "" && unit.trim() !== "";
-
-  async function submit() {
-    setBusy(true);
+  async function submit(values: ItemFormValues) {
     const payload = {
-      code: code.trim(),
-      name: name.trim(),
-      spec: blankToUndefined(spec),
-      productionLine: blankToUndefined(productionLine),
-      price: blankToUndefined(price),
-      type,
-      unit: unit.trim(),
-      decimalPlaces: Number(decimalPlaces),
-      minStock: minStock === "" ? "0" : minStock,
-      excludeFromReconciliation: exclude,
-      packSize: blankToUndefined(packSize),
-      note: blankToUndefined(note),
+      code: values.code.trim(),
+      name: values.name.trim(),
+      spec: blankToUndefined(values.spec),
+      productionLine: blankToUndefined(values.productionLine),
+      price: blankToUndefined(values.price),
+      type: values.type,
+      unit: values.unit.trim(),
+      decimalPlaces: Number(values.decimalPlaces),
+      minStock: values.minStock === "" ? "0" : values.minStock,
+      excludeFromReconciliation: values.exclude,
+      packSize: blankToUndefined(values.packSize),
+      note: blankToUndefined(values.note),
     };
 
     const result = await unwrapAs<unknown>(item ? updateItemAction(item._id, payload) : createItemAction(payload));
-    setBusy(false);
     if (result !== null) {
       toast.success(item ? t("Item saved.") : t("Item added."));
       onSaved();
@@ -97,163 +131,265 @@ export function ItemFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <FieldGroup className="gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="item-code">{t("Code *")}</FieldLabel>
-              <Input id="item-code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={50} />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="item-type">{t("Type *")}</FieldLabel>
-              <Select value={type} onValueChange={(value) => setType(value as ItemType)}>
-                <SelectTrigger id="item-type" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {(Object.keys(ITEM_TYPE_LABEL) as ItemType[]).map((key) => (
-                      <SelectItem key={key} value={key}>
-                        {t(ITEM_TYPE_LABEL[key])}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
+        <form noValidate onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-4">
+          <FieldGroup className="gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field data-invalid={!!errors.code}>
+                <FieldLabel htmlFor="item-code">{t("Code *")}</FieldLabel>
+                <Input id="item-code" maxLength={50} aria-invalid={!!errors.code} {...form.register("code")} />
+                {errors.code?.message ? <FieldError>{t(errors.code.message)}</FieldError> : null}
+              </Field>
+              <Controller
+                control={form.control}
+                name="type"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="item-type">{t("Type *")}</FieldLabel>
+                    <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="item-type"
+                        className="w-full"
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {(Object.keys(ITEM_TYPE_LABEL) as ItemType[]).map((key) => (
+                            <SelectItem key={key} value={key}>
+                              {t(ITEM_TYPE_LABEL[key])}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                  </Field>
+                )}
+              />
+            </div>
 
-          <Field>
-            <FieldLabel htmlFor="item-name">{t("Name *")}</FieldLabel>
-            <Input id="item-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="item-spec">{t("Spec")}</FieldLabel>
-            <Input id="item-spec" value={spec} onChange={(e) => setSpec(e.target.value)} maxLength={100} />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="item-production-line">{t("Production line")}</FieldLabel>
-            <Select value={productionLine} onValueChange={setProductionLine}>
-              <SelectTrigger id="item-production-line" className="w-full">
-                <SelectValue placeholder={t("Select production line")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {PRODUCTION_LINES.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {value}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field>
-              <FieldLabel htmlFor="item-unit">{t("Unit of measure *")}</FieldLabel>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger id="item-unit" className="w-full">
-                  <SelectValue placeholder={t("Select unit")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {ITEM_UNITS.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+            <Field data-invalid={!!errors.name}>
+              <FieldLabel htmlFor="item-name">{t("Name *")}</FieldLabel>
+              <Input id="item-name" maxLength={200} aria-invalid={!!errors.name} {...form.register("name")} />
+              {errors.name?.message ? <FieldError>{t(errors.name.message)}</FieldError> : null}
             </Field>
-            <Field>
-              <FieldLabel htmlFor="item-dp">{t("Decimal places")}</FieldLabel>
-              <Select value={decimalPlaces} onValueChange={setDecimalPlaces}>
-                <SelectTrigger id="item-dp" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {Array.from({ length: 11 }, (_, n) => n).map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n === 0 ? t("0 (whole numbers)") : t("{n} digit(s)", { n })}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+
+            <Field data-invalid={!!errors.spec}>
+              <FieldLabel htmlFor="item-spec">{t("Spec")}</FieldLabel>
+              <Input id="item-spec" maxLength={100} aria-invalid={!!errors.spec} {...form.register("spec")} />
+              {errors.spec?.message ? <FieldError>{t(errors.spec.message)}</FieldError> : null}
             </Field>
-            <Field>
-              <FieldLabel htmlFor="item-min">{t("Minimum stock")}</FieldLabel>
-              <QtyInput id="item-min" value={minStock} onChange={setMinStock} disabled={type === "SEMI"} />
-            </Field>
-          </div>
-          {type === "SEMI" ? (
-            <FieldDescription>
-              {t("Semi-finished items are not stocked: they only serve as an intermediate level in a BOM.")}
-            </FieldDescription>
-          ) : (
-            <FieldDescription>
-              {t(
-                "Each item has a single unit used for BOMs, vouchers and stock. For wire measured in meters, choose 2 decimal places.",
+
+            <Controller
+              control={form.control}
+              name="productionLine"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="item-production-line">{t("Production line")}</FieldLabel>
+                  <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="item-production-line"
+                      className="w-full"
+                      ref={field.ref}
+                      onBlur={field.onBlur}
+                      aria-invalid={fieldState.invalid}
+                    >
+                      <SelectValue placeholder={t("Select production line")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {PRODUCTION_LINES.map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {value}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                </Field>
               )}
-            </FieldDescription>
-          )}
+            />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="item-price">{t("Price (VND)")}</FieldLabel>
-              <Input
-                id="item-price"
-                inputMode="decimal"
-                autoComplete="off"
-                ref={priceInputRef}
-                value={formatPrice(price)}
-                onChange={(event) => {
-                  const input = event.currentTarget.value;
-                  const caret = event.currentTarget.selectionStart ?? input.length;
-                  const nextPrice = parsePriceInput(input);
-                  const nextCaret = formatPrice(parsePriceInput(input.slice(0, caret))).length;
-                  setPrice(nextPrice);
-                  requestAnimationFrame(() => priceInputRef.current?.setSelectionRange(nextCaret, nextCaret));
-                }}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Controller
+                control={form.control}
+                name="unit"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="item-unit">{t("Unit of measure *")}</FieldLabel>
+                    <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="item-unit"
+                        className="w-full"
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                      >
+                        <SelectValue placeholder={t("Select unit")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {ITEM_UNITS.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                  </Field>
+                )}
               />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="item-pack">{t("Packaging (reference only)")}</FieldLabel>
-              <Input
-                id="item-pack"
-                value={packSize}
-                onChange={(e) => setPackSize(e.target.value)}
-                placeholder={t("e.g. 100 m reel")}
+              <Controller
+                control={form.control}
+                name="decimalPlaces"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="item-dp">{t("Decimal places")}</FieldLabel>
+                    <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="item-dp"
+                        className="w-full"
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {Array.from({ length: QTY_MAX_DECIMAL_PLACES + 1 }, (_, n) => n).map((n) => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n === 0 ? t("0 (whole numbers)") : t("{n} digit(s)", { n })}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                  </Field>
+                )}
               />
+              <Controller
+                control={form.control}
+                name="minStock"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="item-min">{t("Minimum stock")}</FieldLabel>
+                    <QtyInput
+                      id="item-min"
+                      ref={field.ref}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      disabled={type === "SEMI"}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                  </Field>
+                )}
+              />
+            </div>
+            {type === "SEMI" ? (
+              <FieldDescription>
+                {t("Semi-finished items are not stocked: they only serve as an intermediate level in a BOM.")}
+              </FieldDescription>
+            ) : (
+              <FieldDescription>
+                {t(
+                  "Each item has a single unit used for BOMs, vouchers and stock. For wire measured in meters, choose 2 decimal places.",
+                )}
+              </FieldDescription>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Controller
+                control={form.control}
+                name="price"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="item-price">{t("Price (VND)")}</FieldLabel>
+                    <Input
+                      id="item-price"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      maxLength={100}
+                      ref={(element) => {
+                        field.ref(element);
+                        priceInputRef.current = element;
+                      }}
+                      value={formatPrice(field.value)}
+                      onBlur={field.onBlur}
+                      onChange={(event) => {
+                        const input = event.currentTarget.value;
+                        const caret = event.currentTarget.selectionStart ?? input.length;
+                        const nextPrice = parsePriceInput(input);
+                        const nextCaret = formatPrice(parsePriceInput(input.slice(0, caret))).length;
+                        field.onChange(nextPrice);
+                        requestAnimationFrame(() => priceInputRef.current?.setSelectionRange(nextCaret, nextCaret));
+                      }}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                  </Field>
+                )}
+              />
+              <Field data-invalid={!!errors.packSize}>
+                <FieldLabel htmlFor="item-pack">{t("Packaging (reference only)")}</FieldLabel>
+                <Input
+                  id="item-pack"
+                  maxLength={100}
+                  placeholder={t("e.g. 100 m reel")}
+                  aria-invalid={!!errors.packSize}
+                  {...form.register("packSize")}
+                />
+                {errors.packSize?.message ? <FieldError>{t(errors.packSize.message)}</FieldError> : null}
+              </Field>
+            </div>
+
+            <Controller
+              control={form.control}
+              name="exclude"
+              render={({ field, fieldState }) => (
+                <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                  <Switch
+                    id="item-exclude"
+                    name={field.name}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    onBlur={field.onBlur}
+                    aria-invalid={fieldState.invalid}
+                  />
+                  <FieldLabel htmlFor="item-exclude" className="font-normal">
+                    {t("Exclude from BOM reconciliation (glue, solder, small consumables)")}
+                  </FieldLabel>
+                  {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                </Field>
+              )}
+            />
+
+            <Field data-invalid={!!errors.note}>
+              <FieldLabel htmlFor="item-note">{t("Notes")}</FieldLabel>
+              <Textarea id="item-note" maxLength={500} aria-invalid={!!errors.note} {...form.register("note")} />
+              {errors.note?.message ? <FieldError>{t(errors.note.message)}</FieldError> : null}
             </Field>
-          </div>
+          </FieldGroup>
 
-          <Field orientation="horizontal">
-            <Switch id="item-exclude" checked={exclude} onCheckedChange={setExclude} />
-            <FieldLabel htmlFor="item-exclude" className="font-normal">
-              {t("Exclude from BOM reconciliation (glue, solder, small consumables)")}
-            </FieldLabel>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="item-note">{t("Notes")}</FieldLabel>
-            <Textarea id="item-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
-          </Field>
-        </FieldGroup>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={busy}>
-            {t("Close")}
-          </Button>
-          <Button onClick={() => void submit()} disabled={busy || !canSubmit}>
-            {busy ? <Spinner /> : null}
-            {t("Save")}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              {t("Close")}
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !isValid}>
+              {isSubmitting ? <Spinner /> : null}
+              {t("Save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

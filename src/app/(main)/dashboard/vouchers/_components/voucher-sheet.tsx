@@ -1,17 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Decimal from "decimal.js";
 import { CircleCheck, Save, Trash2 } from "lucide-react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useT } from "@/lib/i18n/provider";
 import { unwrap, unwrapAs } from "@/lib/wms/action-client";
-import { VOUCHER_REMARK_UNIT, VOUCHER_RULES, type VoucherType } from "@/lib/wms/constants";
+import {
+  QTY_MAX_DECIMAL_PLACES,
+  VOUCHER_REMARK_UNIT,
+  VOUCHER_RULES,
+  VOUCHER_TYPE,
+  type VoucherRemarkUnit,
+  type VoucherType,
+} from "@/lib/wms/constants";
 import { formatDateTime, todayYmd, toYmd, ymdToDate } from "@/lib/wms/format";
 import type { VoucherDTO } from "@/lib/wms/types";
 import { useLoad } from "@/lib/wms/use-load";
@@ -31,6 +41,27 @@ import { type VoucherSheetDialog, VoucherSheetDialogs } from "./voucher-sheet-di
 import { VoucherSheetFields } from "./voucher-sheet-fields";
 import { type VoucherSheetLine, VoucherSheetLines } from "./voucher-sheet-lines";
 
+const voucherTypeValues = Object.values(VOUCHER_TYPE) as [VoucherType, ...VoucherType[]];
+const remarkUnitValues = Object.values(VOUCHER_REMARK_UNIT) as [VoucherRemarkUnit, ...VoucherRemarkUnit[]];
+
+const voucherSheetSchema = z.object({
+  type: z.enum(voucherTypeValues),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  documentNumber: z.string().max(100),
+  note: z.string().max(1000),
+  lines: z.array(
+    z.object({
+      itemId: z.string().nullable(),
+      quantity: z.string(),
+      remarkQuantity: z.string(),
+      remarkUnit: z.enum(remarkUnitValues),
+      note: z.string().max(300),
+    }),
+  ),
+});
+
+type VoucherSheetFormValues = z.infer<typeof voucherSheetSchema>;
+
 export function VoucherSheet({
   direction,
   voucherId,
@@ -48,16 +79,26 @@ export function VoucherSheet({
   const canCancel = useCan("voucher:cancel");
   const { items } = useItems();
 
-  const nextKey = useRef(1);
   const [currentId, setCurrentId] = useState(voucherId);
-  const [type, setType] = useState<VoucherType>(direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCTION");
-  const [date, setDate] = useState(todayYmd());
-  const [documentNumber, setDocumentNumber] = useState("");
-  const [note, setNote] = useState("");
-  const [lines, setLines] = useState<VoucherSheetLine[]>([]);
-  const [busy, setBusy] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [dialog, setDialog] = useState<VoucherSheetDialog>(null);
+  const form = useForm<VoucherSheetFormValues>({
+    resolver: zodResolver(voucherSheetSchema),
+    defaultValues: {
+      type: direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCTION",
+      date: todayYmd(),
+      documentNumber: "",
+      note: "",
+      lines: [],
+    },
+  });
+  const { append, fields, remove, replace } = useFieldArray({ control: form.control, name: "lines" });
+  const type = useWatch({ control: form.control, name: "type" });
+  const date = useWatch({ control: form.control, name: "date" });
+  const documentNumber = useWatch({ control: form.control, name: "documentNumber" });
+  const note = useWatch({ control: form.control, name: "note" });
+  const lines = useWatch({ control: form.control, name: "lines" });
+  const busy = form.formState.isSubmitting;
 
   const {
     data: loaded,
@@ -71,21 +112,20 @@ export function VoucherSheet({
   // Fill the form from the stored voucher whenever a fresh copy arrives
   useEffect(() => {
     if (!loaded) return;
-    setType(loaded.type);
-    setDate(toYmd(loaded.voucherDate));
-    setDocumentNumber(loaded.documentNumber ?? "");
-    setNote(loaded.note ?? "");
-    setLines(
-      loaded.lines.map((line) => ({
-        key: nextKey.current++,
+    form.reset({
+      type: loaded.type,
+      date: toYmd(loaded.voucherDate),
+      documentNumber: loaded.documentNumber ?? "",
+      note: loaded.note ?? "",
+      lines: loaded.lines.map((line) => ({
         itemId: line.itemId,
         quantity: line.quantity,
         remarkQuantity: line.remarkQuantity ?? "",
         remarkUnit: line.remarkUnit ?? VOUCHER_REMARK_UNIT.BOX,
         note: line.note ?? "",
       })),
-    );
-  }, [loaded]);
+    });
+  }, [form, loaded]);
 
   const status = loaded?.status ?? "DRAFT";
   const editable = status === "DRAFT" && canWrite;
@@ -98,69 +138,75 @@ export function VoucherSheet({
     (type) => VOUCHER_RULES[type].direction === direction,
   );
 
-  function patchLine(key: number, patch: Partial<VoucherSheetLine>) {
-    setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+  function patchLine(index: number, patch: Partial<VoucherSheetLine>) {
+    const options = { shouldDirty: true };
+    if (patch.itemId !== undefined) form.setValue(`lines.${index}.itemId`, patch.itemId, options);
+    if (patch.quantity !== undefined) form.setValue(`lines.${index}.quantity`, patch.quantity, options);
+    if (patch.remarkQuantity !== undefined)
+      form.setValue(`lines.${index}.remarkQuantity`, patch.remarkQuantity, options);
+    if (patch.remarkUnit !== undefined) form.setValue(`lines.${index}.remarkUnit`, patch.remarkUnit, options);
+    if (patch.note !== undefined) form.setValue(`lines.${index}.note`, patch.note, options);
   }
 
   function changeType(next: VoucherType) {
     const nextRule = VOUCHER_RULES[next];
+    const currentLines = form.getValues("lines");
     const kept =
       nextRule.direction === "OUT"
-        ? lines
-        : lines.filter(
+        ? currentLines
+        : currentLines.filter(
             (line) => !line.itemId || nextRule.allowed.includes(itemById.get(line.itemId)?.type ?? "MATERIAL"),
           );
-    if (kept.length !== lines.length) toast.info(t("Lines that do not fit the new voucher type were removed."));
-    setLines(kept);
-    setType(next);
+    if (kept.length !== currentLines.length) {
+      toast.info(t("Lines that do not fit the new voucher type were removed."));
+      replace(kept);
+    }
+    form.setValue("type", next, { shouldDirty: true });
   }
 
   function addPasted(rows: PastedRow[]) {
-    setLines((current) => {
-      let next = current;
-      for (const { item, quantity } of rows) {
-        if (next.some((line) => line.itemId === item._id)) {
-          next = next.map((line) =>
-            line.itemId === item._id
-              ? { ...line, quantity: new Decimal(line.quantity || "0").plus(quantity).toString() }
-              : line,
-          );
-        } else {
-          next = [
-            ...next,
-            {
-              key: nextKey.current++,
-              itemId: item._id,
-              quantity,
-              remarkQuantity: "",
-              remarkUnit: VOUCHER_REMARK_UNIT.BOX,
-              note: "",
-            },
-          ];
-        }
+    let next = form.getValues("lines");
+    for (const { item, quantity } of rows) {
+      if (next.some((line) => line.itemId === item._id)) {
+        next = next.map((line) =>
+          line.itemId === item._id
+            ? { ...line, quantity: new Decimal(line.quantity || "0").plus(quantity).toString() }
+            : line,
+        );
+      } else {
+        next = [
+          ...next,
+          {
+            itemId: item._id,
+            quantity,
+            remarkQuantity: "",
+            remarkUnit: VOUCHER_REMARK_UNIT.BOX,
+            note: "",
+          },
+        ];
       }
-      return next;
-    });
+    }
+    replace(next);
   }
 
   /** Validates and saves the draft; returns the voucher id, or null when something is wrong */
-  async function saveDraft(): Promise<string | null> {
-    const filled = lines.filter((line) => line.itemId);
+  async function saveDraft(values: VoucherSheetFormValues): Promise<string | null> {
+    const quantityPattern = new RegExp(`^\\d+(\\.\\d{1,${QTY_MAX_DECIMAL_PLACES}})?$`);
+    const filled = values.lines.filter((line) => line.itemId);
     if (filled.length === 0) {
       toast.error(t("The voucher needs at least one line with an item."));
       return null;
     }
-    if (filled.some((line) => !(Number(line.quantity) > 0))) {
+    if (filled.some((line) => !(Number(line.quantity) > 0) || !quantityPattern.test(line.quantity))) {
       toast.error(t("Every line needs a quantity greater than 0."));
       return null;
     }
-    setBusy(true);
     const result = await unwrapAs<{ id: string }>(
       saveDraftAction(currentId, {
-        type,
-        voucherDate: ymdToDate(date).toISOString(),
-        documentNumber: documentNumber.trim() || undefined,
-        note: note.trim() === "" ? undefined : note.trim(),
+        type: values.type,
+        voucherDate: ymdToDate(values.date).toISOString(),
+        documentNumber: values.documentNumber.trim() || undefined,
+        note: values.note.trim() === "" ? undefined : values.note.trim(),
         lines: filled.map((line) => ({
           itemId: line.itemId!,
           quantity: line.quantity,
@@ -170,7 +216,6 @@ export function VoucherSheet({
         })),
       }),
     );
-    setBusy(false);
     if (!result) return null;
     setCurrentId(result.id);
     onChanged();
@@ -178,22 +223,35 @@ export function VoucherSheet({
   }
 
   async function handleSave() {
-    if (await saveDraft()) toast.success(t("Draft voucher saved."));
+    await form.handleSubmit(
+      async (values) => {
+        if (await saveDraft(values)) toast.success(t("Draft voucher saved."));
+      },
+      () => toast.error(t("Please check the voucher fields.")),
+    )();
   }
 
   async function handleConfirm() {
-    const id = await saveDraft();
-    if (!id) {
-      setDialog(null);
-      return;
-    }
-    const result = await unwrapAs<{ id: string; voucherNo: string }>(confirmVoucherAction(id));
-    setDialog(null);
-    if (result) {
-      toast.success(t("Voucher {voucherNo} confirmed. Stock has been updated.", { voucherNo: result.voucherNo }));
-      onChanged();
-      reload();
-    }
+    await form.handleSubmit(
+      async (values) => {
+        const id = await saveDraft(values);
+        if (!id) {
+          setDialog(null);
+          return;
+        }
+        const result = await unwrapAs<{ id: string; voucherNo: string }>(confirmVoucherAction(id));
+        setDialog(null);
+        if (result) {
+          toast.success(t("Voucher {voucherNo} confirmed. Stock has been updated.", { voucherNo: result.voucherNo }));
+          onChanged();
+          reload();
+        }
+      },
+      () => {
+        setDialog(null);
+        toast.error(t("Please check the voucher fields."));
+      },
+    )();
   }
 
   async function handleCancel(reason: string) {
@@ -252,31 +310,28 @@ export function VoucherSheet({
               voucherTypes={typesOfDirection}
               disabled={!editable}
               onTypeChange={changeType}
-              onDateChange={setDate}
-              onDocumentNumberChange={setDocumentNumber}
-              onNoteChange={setNote}
+              onDateChange={(value) => form.setValue("date", value, { shouldDirty: true })}
+              onDocumentNumberChange={(value) => form.setValue("documentNumber", value, { shouldDirty: true })}
+              onNoteChange={(value) => form.setValue("note", value, { shouldDirty: true })}
             />
             <VoucherSheetLines
-              lines={lines}
+              lines={lines ?? []}
+              fieldIds={fields.map((field) => field.id)}
               pickerItems={pickerItems}
               itemById={itemById}
               editable={editable}
               onAddLine={() =>
-                setLines((current) => [
-                  ...current,
-                  {
-                    key: nextKey.current++,
-                    itemId: null,
-                    quantity: "",
-                    remarkQuantity: "",
-                    remarkUnit: VOUCHER_REMARK_UNIT.BOX,
-                    note: "",
-                  },
-                ])
+                append({
+                  itemId: null,
+                  quantity: "",
+                  remarkQuantity: "",
+                  remarkUnit: VOUCHER_REMARK_UNIT.BOX,
+                  note: "",
+                })
               }
               onOpenPaste={() => setPasteOpen(true)}
               onPatchLine={patchLine}
-              onRemoveLine={(key) => setLines((current) => current.filter((line) => line.key !== key))}
+              onRemoveLine={remove}
             />
           </div>
 
