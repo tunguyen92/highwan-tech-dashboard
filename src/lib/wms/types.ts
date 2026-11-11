@@ -160,6 +160,20 @@ export type SummaryRow = {
   closing: string;
 };
 
+export type SaleAmountReport = {
+  productionLines: string[];
+  deliveries: { id: string; number: string; date: string }[];
+  rows: {
+    itemId: string;
+    code: string;
+    name: string;
+    quantities: Record<string, string>;
+    totalQuantity: string;
+    price: string | null;
+    amount: string | null;
+  }[];
+};
+
 export type ReconStatus = "OVER" | "NO_NORM" | "UNDER" | "OK";
 
 export type ReconRow = {

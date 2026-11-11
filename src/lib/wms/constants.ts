@@ -92,7 +92,7 @@ export const VOUCHER_RULES: Record<VoucherType, { direction: "IN" | "OUT"; allow
 export const ROLE = {
   ADMIN: "ADMIN", // Everything, including user management
   MANAGER: "MANAGER", // Master data, BOM, vouchers (incl. cancel), reports
-  STOREKEEPER: "STOREKEEPER", // Create / confirm vouchers, read the rest
+  STOREKEEPER: "STOREKEEPER", // Create / confirm vouchers, manage items, read the rest
   VIEWER: "VIEWER", // Read only
 } as const;
 export type Role = (typeof ROLE)[keyof typeof ROLE];

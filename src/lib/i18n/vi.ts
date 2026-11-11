@@ -1,4 +1,17 @@
 export const vi: Record<string, string> = {
+  "Sale Amount": "Doanh số xuất hàng",
+  "Finished products on confirmed issue vouchers, grouped by delivery.":
+    "Thành phẩm trên các phiếu xuất đã xác nhận, theo từng lần giao hàng.",
+  "All production lines": "Tất cả chuyền sản xuất",
+  Delivery: "Giao hàng",
+  "Part name": "Tên thành phẩm",
+  "Total quantity": "Tổng số lượng",
+  "Amount (VND)": "Thành tiền (VNĐ)",
+  "No finished products were issued in this period.": "Không có thành phẩm xuất trong khoảng thời gian này.",
+  "Could not load the report.": "Không thể tải báo cáo.",
+  "Try again": "Thử lại",
+  "Only confirmed issue vouchers are included. Prices and production lines use the current item catalog; missing prices are shown as a dash.":
+    "Chỉ tính phiếu xuất đã xác nhận. Giá và chuyền sản xuất lấy theo danh mục hiện tại; mặt hàng chưa có giá hiển thị dấu gạch ngang.",
   "Signed in.": "Đăng nhập thành công.",
   Username: "Tên đăng nhập",
   Password: "Mật khẩu",
@@ -57,8 +70,8 @@ export const vi: Record<string, string> = {
     "Mọi phiên đăng nhập hiện tại của người dùng này sẽ bị đăng xuất.",
   Reset: "Đặt lại",
   Users: "Người dùng",
-  "Manage accounts and roles. Administrator: full access. Manager: catalog, BOMs, vouchers, cancelling vouchers. Storekeeper: create and confirm vouchers. Viewer: read only.":
-    "Quản lý tài khoản và vai trò. Quản trị viên: toàn quyền. Quản lý: danh mục, định mức, phiếu, hủy phiếu. Thủ kho: lập và xác nhận phiếu. Chỉ xem: chỉ đọc.",
+  "Manage accounts and roles. Administrator: full access. Manager: catalog, BOMs, vouchers, cancelling vouchers. Storekeeper: manage items, create and confirm vouchers. Viewer: read only. Item prices are administrator-only.":
+    "Quản lý tài khoản và vai trò. Quản trị viên: toàn quyền. Quản lý: danh mục, định mức, phiếu, hủy phiếu. Thủ kho: quản lý mã hàng, lập và xác nhận phiếu. Chỉ xem: chỉ đọc. Chỉ quản trị viên được xem hoặc sửa giá mã hàng.",
   Status: "Trạng thái",
   "Last sign-in": "Đăng nhập gần nhất",
   You: "Bạn",
@@ -449,7 +462,6 @@ export const vi: Record<string, string> = {
     "Việc cần chú ý hôm nay và tình hình hoạt động của kho trong tháng này.",
   Refresh: "Làm mới",
   "Could not load the overview.": "Không tải được trang tổng quan.",
-  "Try again": "Thử lại",
   "Items below minimum": "Mã hàng dưới mức tối thiểu",
   "Out of stock": "Hết hàng",
   "stocked items": "mã hàng có tồn kho",

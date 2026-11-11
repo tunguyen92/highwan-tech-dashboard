@@ -56,7 +56,7 @@ export function UsersScreen() {
       <PageCard
         title={t("Users")}
         description={t(
-          "Manage accounts and roles. Administrator: full access. Manager: catalog, BOMs, vouchers, cancelling vouchers. Storekeeper: create and confirm vouchers. Viewer: read only.",
+          "Manage accounts and roles. Administrator: full access. Manager: catalog, BOMs, vouchers, cancelling vouchers. Storekeeper: manage items, create and confirm vouchers. Viewer: read only. Item prices are administrator-only.",
         )}
         actions={
           canManage ? (

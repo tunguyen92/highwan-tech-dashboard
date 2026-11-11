@@ -130,6 +130,13 @@ export const bomPageFilterSchema = bomFilterSchema.extend({
 });
 
 export const stockSummarySchema = z.object({ from: ymd, to: ymd, type: z.enum(["MATERIAL", "PRODUCT"]).optional() });
+export const saleAmountSchema = z
+  .object({
+    from: z.iso.date(),
+    to: z.iso.date(),
+    productionLine: z.string().trim().min(1).max(100).optional(),
+  })
+  .refine((value) => value.from <= value.to, { path: ["to"], message: "End date must be on or after start date" });
 export const reconciliationSchema = z.object({
   period: periodStr,
   tolerancePercent: z.number().min(0).max(100).default(2),

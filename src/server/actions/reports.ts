@@ -10,10 +10,12 @@ import {
   getStockSummary,
   vnDayStart,
 } from "@/server/lib/reports";
+import { getSaleAmount } from "@/server/lib/sale-amount";
 import {
   currentStockPageSchema,
   currentStockSchema,
   reconciliationSchema,
+  saleAmountSchema,
   stockCardSchema,
   stockSummarySchema,
 } from "@/server/lib/schemas";
@@ -39,6 +41,14 @@ export async function stockSummaryAction(input: unknown) {
     const d = stockSummarySchema.parse(input);
     const r = range(d.from, d.to);
     return getStockSummary(r.from, r.to, d.type);
+  });
+}
+
+export async function saleAmountAction(input: unknown) {
+  return run("sale-amount:read", async () => {
+    const d = saleAmountSchema.parse(input);
+    const r = range(d.from, d.to);
+    return getSaleAmount(r.from, r.to, d.productionLine);
   });
 }
 

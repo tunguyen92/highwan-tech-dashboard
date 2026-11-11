@@ -44,6 +44,8 @@ type ItemListResult = { rows: ItemDTO[]; total: number; page: number; pageSize: 
 export function ItemsScreen() {
   const t = useT();
   const canWrite = useCan("item:write");
+  const canReadPrice = useCan("item:price:read");
+  const columnCount = canReadPrice ? 10 : 9;
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>("ALL");
   const [includeInactive, setIncludeInactive] = useState(false);
@@ -149,15 +151,15 @@ export function ItemsScreen() {
               <TableHead>{t("Production line")}</TableHead>
               <TableHead>{t("Type")}</TableHead>
               <TableHead>{t("UoM")}</TableHead>
-              <TableHead className="text-right">{t("Price (VND)")}</TableHead>
+              {canReadPrice ? <TableHead className="text-right">{t("Price (VND)")}</TableHead> : null}
               <TableHead className="text-right">{t("Minimum stock")}</TableHead>
               <TableHead>{t("Notes")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <LoadingRows columns={10} /> : null}
-            {!loading && rows.length === 0 ? <EmptyRow columns={10} text={t("No items.")} /> : null}
+            {loading ? <LoadingRows columns={columnCount} /> : null}
+            {!loading && rows.length === 0 ? <EmptyRow columns={columnCount} text={t("No items.")} /> : null}
             {!loading &&
               rows.map((item) => (
                 <TableRow key={item._id} className={item.isActive ? "" : "opacity-60"}>
@@ -169,9 +171,11 @@ export function ItemsScreen() {
                     <ItemTypeBadge type={item.type} />
                   </TableCell>
                   <TableCell>{item.unit}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {item.price ? formatPrice(item.price) : "-"}
-                  </TableCell>
+                  {canReadPrice ? (
+                    <TableCell className="text-right tabular-nums">
+                      {item.price ? formatPrice(item.price) : "-"}
+                    </TableCell>
+                  ) : null}
                   <TableCell className="text-right tabular-nums">
                     {item.isStocked ? formatQty(item.minStock) : "-"}
                   </TableCell>

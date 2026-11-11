@@ -14,8 +14,8 @@ Mô tả sản phẩm từ góc nhìn người dùng: ai dùng, làm gì, màn h
 
 | Vai trò                 | Nhu cầu chính                                            | Quyền (tóm tắt)                                                                 |
 | ----------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| _Thủ kho_ (STOREKEEPER) | Lập nhanh phiếu nhập/xuất, xác nhận, xem tồn             | Lập, sửa nháp, xác nhận phiếu; xem danh mục, định mức, báo cáo. Không hủy phiếu |
-| _Quản lý_ (MANAGER)     | Quản lý danh mục và định mức, hủy phiếu sai, xem báo cáo | Tất cả của thủ kho + sửa danh mục, soạn/kích hoạt định mức, hủy phiếu           |
+| _Thủ kho_ (STOREKEEPER) | Lập nhanh phiếu nhập/xuất, xác nhận, quản lý mã hàng    | Thêm/sửa mã hàng trừ giá; lập, sửa nháp, xác nhận phiếu; xem danh mục, báo cáo. Không hủy phiếu |
+| _Quản lý_ (MANAGER)     | Quản lý danh mục và định mức, hủy phiếu sai, xem báo cáo | Tất cả của thủ kho + soạn/kích hoạt định mức và hủy phiếu                      |
 | _Quản trị viên_ (ADMIN) | Cấp tài khoản                                            | Tất cả của quản lý + quản lý người dùng                                         |
 | _Chỉ xem_ (VIEWER)      | Xem tồn và báo cáo                                       | Chỉ đọc                                                                         |
 

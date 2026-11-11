@@ -30,6 +30,7 @@ import type { ItemDTO } from "@/lib/wms/types";
 import { createItemAction, updateItemAction } from "@/server/actions/items";
 
 import { QtyInput } from "../../_components/wms/qty-input";
+import { useCan } from "../../_components/wms/user-context";
 
 const blankToUndefined = (value: string) => (value.trim() === "" ? undefined : value.trim());
 const ITEM_UNITS = ["BOTTLE", "BOX", "EA", "KG", "M", "PRODUCT", "ROLL", "SET", "TIN"];
@@ -78,6 +79,7 @@ export function ItemFormDialog({
   onSaved: () => void;
 }) {
   const t = useT();
+  const canManagePrice = useCan("item:price:read");
   const priceInputRef = useRef<HTMLInputElement>(null);
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemFormSchema),
@@ -105,7 +107,7 @@ export function ItemFormDialog({
       name: values.name.trim(),
       spec: blankToUndefined(values.spec),
       productionLine: blankToUndefined(values.productionLine),
-      price: blankToUndefined(values.price),
+      ...(canManagePrice ? { price: blankToUndefined(values.price) } : {}),
       type: values.type,
       unit: values.unit.trim(),
       minStock: values.minStock === "" ? "0" : values.minStock,
@@ -275,38 +277,40 @@ export function ItemFormDialog({
               </FieldDescription>
             )}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Controller
-                control={form.control}
-                name="price"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="item-price">{t("Price (VND)")}</FieldLabel>
-                    <Input
-                      id="item-price"
-                      inputMode="decimal"
-                      autoComplete="off"
-                      maxLength={100}
-                      ref={(element) => {
-                        field.ref(element);
-                        priceInputRef.current = element;
-                      }}
-                      value={formatPrice(field.value)}
-                      onBlur={field.onBlur}
-                      onChange={(event) => {
-                        const input = event.currentTarget.value;
-                        const caret = event.currentTarget.selectionStart ?? input.length;
-                        const nextPrice = parsePriceInput(input);
-                        const nextCaret = formatPrice(parsePriceInput(input.slice(0, caret))).length;
-                        field.onChange(nextPrice);
-                        requestAnimationFrame(() => priceInputRef.current?.setSelectionRange(nextCaret, nextCaret));
-                      }}
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
-                  </Field>
-                )}
-              />
+            <div className={canManagePrice ? "grid gap-4 sm:grid-cols-2" : "grid gap-4"}>
+              {canManagePrice ? (
+                <Controller
+                  control={form.control}
+                  name="price"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="item-price">{t("Price (VND)")}</FieldLabel>
+                      <Input
+                        id="item-price"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        maxLength={100}
+                        ref={(element) => {
+                          field.ref(element);
+                          priceInputRef.current = element;
+                        }}
+                        value={formatPrice(field.value)}
+                        onBlur={field.onBlur}
+                        onChange={(event) => {
+                          const input = event.currentTarget.value;
+                          const caret = event.currentTarget.selectionStart ?? input.length;
+                          const nextPrice = parsePriceInput(input);
+                          const nextCaret = formatPrice(parsePriceInput(input.slice(0, caret))).length;
+                          field.onChange(nextPrice);
+                          requestAnimationFrame(() => priceInputRef.current?.setSelectionRange(nextCaret, nextCaret));
+                        }}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
+                    </Field>
+                  )}
+                />
+              ) : null}
               <Field data-invalid={!!errors.packSize}>
                 <FieldLabel htmlFor="item-pack">{t("Packaging (reference only)")}</FieldLabel>
                 <Input

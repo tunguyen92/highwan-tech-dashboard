@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { connectDB } from "@/lib/mongodb";
+import { can } from "@/lib/wms/permissions";
+import { getCurrentUser } from "@/server/lib/auth";
 import { listItemsPage } from "@/server/lib/item-service";
 import { itemPageFilterSchema } from "@/server/lib/schemas";
 
@@ -22,15 +23,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid query parameters", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  await connectDB();
+  const user = await getCurrentUser();
   const result = await listItemsPage(parsed.data);
 
-  const rows = result.rows.map((item) => ({
-    ...item,
-    _id: String(item._id),
-    minStock: item.minStock.toString(),
-    price: item.price?.toString(),
-  }));
+  const canReadPrice = user !== null && can(user.role, "item:price:read");
+  const rows = result.rows.map((item) => {
+    const { price, ...itemData } = item;
+    return {
+      ...itemData,
+      _id: String(item._id),
+      minStock: item.minStock.toString(),
+      ...(canReadPrice && price ? { price: price.toString() } : {}),
+    };
+  });
 
   return NextResponse.json({ ...result, rows });
 }

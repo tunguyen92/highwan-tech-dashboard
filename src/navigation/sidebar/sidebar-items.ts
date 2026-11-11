@@ -133,6 +133,13 @@ export const sidebarItems: NavGroup[] = [
         permission: "report:read",
       },
       {
+        id: "sale-amount",
+        title: "Sale Amount",
+        url: "/dashboard/reports/sale-amount",
+        icon: Banknote,
+        permission: "sale-amount:read",
+      },
+      {
         id: "reconciliation",
         title: "BOM reconciliation",
         url: "/dashboard/reports/reconciliation",

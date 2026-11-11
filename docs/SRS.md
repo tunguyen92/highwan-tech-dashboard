@@ -98,6 +98,7 @@ Ký hiệu: _Quyền_ là quyền tối thiểu cần có (bảng ở mục 7).
 | FR-ITM-04 | Ngừng sử dụng (ẩn) thay vì xóa. Không ngừng được mã còn tồn kho > 0 (ITEM_HAS_STOCK)                                                                                                     | item:write |
 | FR-ITM-05 | Liệt kê, lọc theo loại, tìm theo mã/tên, tùy chọn gồm mã đã ngừng; tối đa 1000 dòng                                                                                                      | item:read  |
 | FR-ITM-06 | Tra ngược: liệt kê các định mức _đang áp dụng_ chứa một mã hàng                                                                                                                          | bom:read   |
+| FR-ITM-07 | Chỉ admin được xem, thêm hoặc sửa giá mã hàng; các API và Server Actions không trả giá cho vai trò khác và từ chối yêu cầu ghi giá | item:price:read |
 
 ### 3.4 Định mức (BOM)
 
@@ -157,6 +158,7 @@ SEMI không bao giờ được phép trên phiếu (ITEM_NOT_STOCKED).
 | FR-RPT-01 | Nhập - Xuất - Tồn trong [từ ngày, đến ngày] (ngày đến tính trọn ngày, giờ Việt Nam): tồn đầu = tổng phát sinh trước kỳ; nhập, xuất = tổng phát sinh có dấu dương/âm trong kỳ; tồn cuối = đầu + nhập − xuất. Lọc theo loại | report:read |
 | FR-RPT-02 | Đối chiếu định mức theo tháng (mục 6.4)                                                                                                                                                                                   | report:read |
 | FR-RPT-03 | Báo cáo NXT, thẻ kho, tồn kho, đối chiếu, tổng nhu cầu xuất được CSV (UTF-8 có BOM, ô được đặt trong dấu nháy)                                                                                                            | report:read |
+| FR-RPT-04 | Sale Amount (admin): lọc theo khoảng ngày (tính trọn ngày theo giờ Việt Nam) và chuyền sản xuất; mỗi cột là một phiếu xuất đã xác nhận, mỗi dòng là một thành phẩm, kèm tổng số lượng, giá và thành tiền. Tính tất cả loại phiếu xuất, không tính nguyên liệu tự xuất theo BOM; phiếu đã hủy không được tính. Giá và chuyền lấy từ danh mục hiện tại, sản phẩm chưa có giá không tính thành tiền. | sale-amount:read |
 
 ### 3.8 Đa ngôn ngữ (I18N)
 
@@ -355,7 +357,8 @@ _Giới hạn đã biết:_ dùng định mức đang áp dụng tại thời đ
 | Quyền                                             | ADMIN | MANAGER | STOREKEEPER | VIEWER |
 | ------------------------------------------------- | :---: | :-----: | :---------: | :----: |
 | item:read, bom:read, voucher:read, report:read    |   ✓   |    ✓    |      ✓      |   ✓    |
-| item:write                                        |   ✓   |    ✓    |             |        |
+| item:write (không gồm giá)                        |   ✓   |    ✓    |      ✓      |        |
+| item:price:read (xem/sửa giá)                     |   ✓   |         |             |        |
 | bom:write                                         |   ✓   |    ✓    |             |        |
 | bom:activate                                      |   ✓   |    ✓    |             |        |
 | voucher:write (lập, sửa, xóa nháp, điền định mức) |   ✓   |    ✓    |      ✓      |        |
