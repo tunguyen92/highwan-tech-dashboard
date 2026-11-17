@@ -10,13 +10,14 @@ export function setFormatLocale(locale: Locale) {
 }
 export const getFormatLocale = () => currentLocale;
 
-const DATE_LOCALE: Record<Locale, string> = { vi: "vi-VN", en: "en-GB" };
+const DATE_LOCALE: Record<Locale, string> = { vi: "vi-VN", en: "en-GB", ko: "ko-KR" };
 const SEPARATORS: Record<Locale, { group: string; decimal: string }> = {
   vi: { group: ".", decimal: "," },
   en: { group: ",", decimal: "." },
+  ko: { group: ",", decimal: "." },
 };
 
-/** Quantities arrive as exact decimal strings. Format with locale grouping (vi: 1.234,5 / en: 1,234.5) without float math. */
+/** Quantities arrive as exact decimal strings. Format with locale grouping without float math. */
 export function formatQty(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") return "";
   let plain: string;

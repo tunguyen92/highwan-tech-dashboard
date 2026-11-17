@@ -15,7 +15,7 @@ import { LOCALE_LABEL, LOCALES, type Locale } from "@/lib/i18n/config";
 import { useLocale, useT } from "@/lib/i18n/provider";
 import { setLocaleAction } from "@/server/actions/locale";
 
-/** Switches the UI language (Vietnamese / English). Stored in a cookie, then the page is re-rendered. */
+/** Switches the UI language. Stored in a cookie, then the page is re-rendered. */
 export function LanguageSwitcher({ variant = "outline" }: { variant?: "outline" | "ghost" }) {
   const t = useT();
   const locale = useLocale();
