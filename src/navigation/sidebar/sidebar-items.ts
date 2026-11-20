@@ -38,11 +38,13 @@ import {
   UserRound,
   Users,
   UtensilsCrossed,
+  Wrench,
 } from "lucide-react";
 
 import type { TFunction } from "@/lib/i18n/translate";
 import type { Role } from "@/lib/wms/constants";
 import { can, type Permission } from "@/lib/wms/permissions";
+import { canAccessTools } from "@/lib/wms/tools-access";
 
 export type NavBadge = "new" | "updated" | "soon";
 
@@ -117,8 +119,20 @@ export const sidebarItems: NavGroup[] = [
     id: 2,
     label: "Catalog",
     items: [
-      { id: "items", title: "Items", url: "/dashboard/items", icon: Package, permission: "item:read" },
-      { id: "boms", title: "BOM (bill of materials)", url: "/dashboard/boms", icon: Layers, permission: "bom:read" },
+      {
+        id: "items",
+        title: "Items",
+        url: "/dashboard/items",
+        icon: Package,
+        permission: "item:read",
+      },
+      {
+        id: "boms",
+        title: "BOM (bill of materials)",
+        url: "/dashboard/boms",
+        icon: Layers,
+        permission: "bom:read",
+      },
     ],
   },
   {
@@ -152,8 +166,33 @@ export const sidebarItems: NavGroup[] = [
     id: 4,
     label: "System",
     items: [
-      { id: "wms-users", title: "Users", url: "/dashboard/admin/users", icon: Users, permission: "user:manage" },
-      { id: "wms-account", title: "Account", url: "/dashboard/account", icon: UserRound },
+      {
+        id: "wms-users",
+        title: "Users",
+        url: "/dashboard/admin/users",
+        icon: Users,
+        permission: "user:manage",
+      },
+      {
+        id: "wms-account",
+        title: "Account",
+        url: "/dashboard/account",
+        icon: UserRound,
+      },
+      // { id: "file-manager", title: "File Manager", url: "/dashboard/file-manager", icon: FolderOpen },
+      {
+        id: "tools",
+        title: "Tools",
+        icon: Wrench,
+        subItems: [
+          {
+            id: "payslip",
+            title: "Payslip",
+            url: "/tools/payslip",
+            icon: ReceiptText,
+          },
+        ],
+      },
     ],
   },
   // {
@@ -388,13 +427,14 @@ export const sidebarItems: NavGroup[] = [
 ];
 
 /** Keeps only the groups and items the role is allowed to open. UI convenience only: the server re-checks. */
-export function filterNavByRole(groups: readonly NavGroup[], role: Role, t: TFunction): NavGroup[] {
+export function filterNavByRole(groups: readonly NavGroup[], role: Role, t: TFunction, username?: string): NavGroup[] {
   const allowed = (permission?: Permission) => !permission || can(role, permission);
   return groups
     .map((group) => ({
       ...group,
       label: group.label ? t(group.label) : undefined,
       items: group.items
+        .filter((item) => item.id !== "tools" || canAccessTools(username))
         .filter((item) => allowed(item.permission))
         .map((item: NavMainItem) =>
           item.subItems

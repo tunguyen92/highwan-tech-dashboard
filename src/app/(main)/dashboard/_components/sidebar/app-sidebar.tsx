@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={filterNavByRole(sidebarItems, user?.role, t)} />
+        <NavMain items={filterNavByRole(sidebarItems, user?.role, t, user?.username)} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
