@@ -34,7 +34,9 @@ import { useCan } from "../../_components/wms/user-context";
 
 const blankToUndefined = (value: string) => (value.trim() === "" ? undefined : value.trim());
 const ITEM_UNITS = ["BOTTLE", "BOX", "EA", "KG", "M", "PRODUCT", "ROLL", "SET", "TIN"];
-const PRODUCTION_LINES = ["BIDET", "AL", "LW ASSY", "LW-BT"];
+const PRODUCTION_LINES = ["BIDET", "AL", "LW ASSY", "LW-BT", "BLOWER"];
+const includeCurrentOption = (options: string[], current?: string) =>
+  current && !options.includes(current) ? [current, ...options] : options;
 const itemTypeValues = Object.keys(ITEM_TYPE_LABEL) as [ItemType, ...ItemType[]];
 const quantityPattern = new RegExp(`^\\d+(\\.\\d{1,${QTY_MAX_DECIMAL_PLACES}})?$`);
 const pricePattern = /^\d+(\.\d{1,2})?$/;
@@ -100,6 +102,8 @@ export function ItemFormDialog({
   });
   const { errors, isSubmitting, isValid } = form.formState;
   const type = useWatch({ control: form.control, name: "type" });
+  const productionLines = includeCurrentOption(PRODUCTION_LINES, item?.productionLine);
+  const units = includeCurrentOption(ITEM_UNITS, item?.unit);
 
   async function submit(values: ItemFormValues) {
     const payload = {
@@ -203,7 +207,7 @@ export function ItemFormDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {PRODUCTION_LINES.map((value) => (
+                        {productionLines.map((value) => (
                           <SelectItem key={value} value={value}>
                             {value}
                           </SelectItem>
@@ -235,7 +239,7 @@ export function ItemFormDialog({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {ITEM_UNITS.map((value) => (
+                          {units.map((value) => (
                             <SelectItem key={value} value={value}>
                               {t(value)}
                             </SelectItem>
@@ -356,7 +360,7 @@ export function ItemFormDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               {t("Close")}
             </Button>
-            <Button type="submit" disabled={isSubmitting || !isValid}>
+            <Button type="submit" disabled={isSubmitting || (!item && !isValid)}>
               {isSubmitting ? <Spinner /> : null}
               {t("Save")}
             </Button>

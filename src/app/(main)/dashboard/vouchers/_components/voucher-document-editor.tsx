@@ -342,7 +342,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         worksheet.addRow([
           index + 1,
           line.item?.code ?? "",
-          line.item?.name ?? "",
+          [line.item?.name, line.item?.spec].filter(Boolean).join(" · "),
           line.quantity,
           line.item?.unit ?? "",
           formatVoucherRemark(line),
@@ -547,7 +547,9 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
                             ) : (
                               <span>
                                 {line.itemId
-                                  ? `${itemById.get(line.itemId)?.code ?? ""} · ${itemById.get(line.itemId)?.name ?? ""}`
+                                  ? `${itemById.get(line.itemId)?.code ?? ""} · ${itemById.get(line.itemId)?.name ?? ""}${
+                                      itemById.get(line.itemId)?.spec ? ` · ${itemById.get(line.itemId)?.spec}` : ""
+                                    }`
                                   : ""}
                               </span>
                             )}

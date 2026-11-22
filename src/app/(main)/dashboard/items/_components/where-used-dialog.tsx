@@ -24,7 +24,8 @@ export function WhereUsedDialog({ item, onClose }: { item: ItemDTO | null; onClo
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {item?.code} {t("is used in which BOMs?")}
+            {item?.code}
+            {item?.spec ? ` · ${item.spec}` : ""} {t("is used in which BOMs?")}
           </DialogTitle>
           <DialogDescription>
             {t("Only active BOMs are counted. Useful before changing or discontinuing a material.")}

@@ -27,7 +27,7 @@ export function SaleAmountReport() {
     [from, to, productionLine],
   );
   const deliveries = data?.deliveries ?? [];
-  const columns = 5 + deliveries.length;
+  const columns = 6 + deliveries.length;
   const headerRowSpan = deliveries.length > 0 ? 3 : 1;
 
   return (
@@ -72,6 +72,7 @@ export function SaleAmountReport() {
           <TableRow>
             <TableHead rowSpan={headerRowSpan}>{t("Code")}</TableHead>
             <TableHead rowSpan={headerRowSpan}>{t("Part name")}</TableHead>
+            <TableHead rowSpan={headerRowSpan}>{t("Spec")}</TableHead>
             {deliveries.length > 0 ? (
               <TableHead colSpan={deliveries.length} className="text-center">
                 {t("Delivery")}
@@ -126,6 +127,7 @@ export function SaleAmountReport() {
               <TableRow key={row.itemId}>
                 <TableCell className="font-medium">{row.code}</TableCell>
                 <TableCell>{row.name}</TableCell>
+                <TableCell>{row.spec || "-"}</TableCell>
                 {deliveries.map((delivery) => (
                   <TableCell key={delivery.id} className="text-right tabular-nums">
                     {row.quantities[delivery.id] ? formatQty(row.quantities[delivery.id]) : "-"}

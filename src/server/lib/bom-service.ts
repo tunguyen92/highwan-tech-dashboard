@@ -39,6 +39,7 @@ export async function listBomsPage(f: BomPageFilter) {
         $addFields: {
           lineCount: { $size: "$lines" },
           outputItemName: { $ifNull: ["$outputItem.name", ""] },
+          outputItemSpec: { $ifNull: ["$outputItem.spec", ""] },
         },
       },
       { $project: { lines: 0, outputItem: 0 } },

@@ -58,6 +58,7 @@ export function StockCardSheet({ item, onClose }: { item: StockRow | null; onClo
         <SheetHeader className="border-b">
           <SheetTitle>
             {t("Stock card")}: {item?.code} {item ? ` - ${item.name}` : ""}
+            {item?.spec ? ` - ${item.spec}` : ""}
           </SheetTitle>
           <SheetDescription>
             {t("Unit of measure")}: {item?.unit}. {t("The balance is calculated in date order")}.

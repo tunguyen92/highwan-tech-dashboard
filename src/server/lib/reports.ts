@@ -15,6 +15,7 @@ type CurrentStockAggregateRow = {
   _id: Types.ObjectId;
   code: string;
   name: string;
+  spec?: string;
   productionLine?: string;
   unit: string;
   type: "MATERIAL" | "PRODUCT";
@@ -74,6 +75,7 @@ function mapCurrentStockRows(rows: CurrentStockAggregateRow[]) {
     itemId: String(r._id),
     code: r.code,
     name: r.name,
+    spec: r.spec,
     productionLine: r.productionLine,
     unit: r.unit,
     type: r.type,
@@ -133,6 +135,7 @@ export async function getStockSummary(from: Date, to: Date, type?: "MATERIAL" | 
       itemId: String(r._id),
       code: r.item.code,
       name: r.item.name,
+      spec: r.item.spec,
       unit: r.item.unit,
       type: r.item.type,
       opening: opening.toString(),
@@ -230,6 +233,7 @@ export async function getMonthlyReconciliation(period: string, defaultToleranceP
         itemId: id,
         code: it.code,
         name: it.name,
+        spec: it.spec,
         unit: it.unit,
         norm: norm.toString(),
         allowed: allowed.toString(),
@@ -245,7 +249,13 @@ export async function getMonthlyReconciliation(period: string, defaultToleranceP
   const skippedItems = await Item.find({ _id: { $in: skippedProducts.map((x) => new Types.ObjectId(x.id)) } }).lean();
   const skipped = skippedProducts.map((x) => {
     const item = skippedItems.find((i) => String(i._id) === x.id);
-    return { itemId: x.id, code: item?.code ?? x.id, name: item?.name ?? "", quantity: x.quantity };
+    return {
+      itemId: x.id,
+      code: item?.code ?? x.id,
+      name: item?.name ?? "",
+      spec: item?.spec,
+      quantity: x.quantity,
+    };
   });
 
   return { rows, skipped };

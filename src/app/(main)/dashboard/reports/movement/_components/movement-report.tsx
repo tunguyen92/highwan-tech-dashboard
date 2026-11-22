@@ -46,8 +46,8 @@ export function MovementReport() {
           onClick={() =>
             downloadCsv(
               `nhap-xuat-ton_${from}_${to}.csv`,
-              [t("Code"), t("Name"), t("UoM"), t("Opening"), t("In"), t("Out"), t("Closing")],
-              rows.map((r) => [r.code, r.name, r.unit, r.opening, r.in, r.out, r.closing]),
+              [t("Code"), t("Name"), t("Spec"), t("UoM"), t("Opening"), t("In"), t("Out"), t("Closing")],
+              rows.map((r) => [r.code, r.name, r.spec ?? "", r.unit, r.opening, r.in, r.out, r.closing]),
             )
           }
         >
@@ -78,6 +78,7 @@ export function MovementReport() {
           <TableRow>
             <TableHead>{t("Code")}</TableHead>
             <TableHead>{t("Name")}</TableHead>
+            <TableHead>{t("Spec")}</TableHead>
             <TableHead>{t("UoM")}</TableHead>
             <TableHead className="text-right">{t("Opening")}</TableHead>
             <TableHead className="text-right">{t("In")}</TableHead>
@@ -86,13 +87,14 @@ export function MovementReport() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? <LoadingRows columns={7} /> : null}
-          {!loading && rows.length === 0 ? <EmptyRow columns={7} text={t("No activity in this period.")} /> : null}
+          {loading ? <LoadingRows columns={8} /> : null}
+          {!loading && rows.length === 0 ? <EmptyRow columns={8} text={t("No activity in this period.")} /> : null}
           {!loading &&
             rows.map((row) => (
               <TableRow key={row.itemId}>
                 <TableCell className="font-medium">{row.code}</TableCell>
                 <TableCell>{row.name}</TableCell>
+                <TableCell>{row.spec || "-"}</TableCell>
                 <TableCell>{row.unit}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatQty(row.opening)}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatQty(row.in)}</TableCell>

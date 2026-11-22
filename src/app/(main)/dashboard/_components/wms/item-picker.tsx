@@ -57,6 +57,7 @@ export function ItemPicker({
               <>
                 <span className="font-medium">{selected.code}</span>
                 <span className="text-muted-foreground"> · {selected.name}</span>
+                {selected.spec ? <span className="text-muted-foreground"> · {selected.spec}</span> : null}
               </>
             ) : (
               <span className="text-muted-foreground">{placeholder ?? t("Select an item...")}</span>
@@ -84,7 +85,8 @@ export function ItemPicker({
                   <div className="grid min-w-0 flex-1">
                     <span className="truncate font-medium">{item.code}</span>
                     <span className="text-muted-foreground truncate text-xs">
-                      {item.name} · {item.unit} · {t(ITEM_TYPE_LABEL[item.type])}
+                      {item.name}
+                      {item.spec ? ` · ${item.spec}` : ""} · {item.unit} · {t(ITEM_TYPE_LABEL[item.type])}
                     </span>
                   </div>
                 </CommandItem>

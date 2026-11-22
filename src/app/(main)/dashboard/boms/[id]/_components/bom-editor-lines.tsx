@@ -18,6 +18,7 @@ export type BomEditorLine = {
   itemId: string | null;
   itemCode: string;
   itemName: string;
+  itemSpec?: string;
   unit: string;
   quantity: string;
   scrapPercent: string;
@@ -89,9 +90,11 @@ export function BomEditorLines({
             const item = (line.itemId ? itemById.get(line.itemId) : undefined) ?? itemByCode.get(line.itemCode);
             let placeholder: string | undefined;
             if (item) {
-              placeholder = `${item.code} · ${item.name}`;
+              placeholder = `${item.code} · ${item.name}${item.spec ? ` · ${item.spec}` : ""}`;
             } else if (line.itemCode) {
-              placeholder = `${line.itemCode}${line.itemName ? ` · ${line.itemName}` : ""}`;
+              placeholder = `${line.itemCode}${line.itemName ? ` · ${line.itemName}` : ""}${
+                line.itemSpec ? ` · ${line.itemSpec}` : ""
+              }`;
             }
 
             return (
@@ -117,6 +120,7 @@ export function BomEditorLines({
                           itemId: picked._id,
                           itemCode: picked.code,
                           itemName: picked.name,
+                          itemSpec: picked.spec,
                           unit: picked.unit,
                         })
                       }
@@ -125,6 +129,9 @@ export function BomEditorLines({
                     <span>
                       <span className="font-medium">{line.itemCode || item?.code}</span>
                       <span className="text-muted-foreground"> • {line.itemName || item?.name}</span>
+                      {item?.spec || line.itemSpec ? (
+                        <span className="text-muted-foreground"> • {item?.spec || line.itemSpec}</span>
+                      ) : null}
                     </span>
                   )}
                 </TableCell>

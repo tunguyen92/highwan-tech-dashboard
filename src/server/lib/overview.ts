@@ -105,6 +105,7 @@ export async function getOverview() {
         itemId: r.itemId,
         code: r.code,
         name: r.name,
+        spec: r.spec,
         unit: r.unit,
         onHand: r.onHand,
         minStock: r.minStock,

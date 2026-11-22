@@ -21,6 +21,7 @@ export type StockRow = {
   itemId: string;
   code: string;
   name: string;
+  spec?: string;
   unit: string;
   type: ItemType;
   productionLine?: string;
@@ -51,6 +52,7 @@ export type BomLineDTO = {
   itemId: string;
   itemCode: string;
   itemName: string;
+  itemSpec?: string;
   unit: string;
   quantity: string;
   scrapPercent: number;
@@ -62,6 +64,7 @@ export type BomListRow = {
   outputItemId: string;
   outputItemCode: string;
   outputItemName: string;
+  outputItemSpec?: string;
   version: number;
   status: BomStatus;
   lineCount: number;
@@ -85,6 +88,7 @@ export type BomTreeNodeDTO = {
   itemId: string;
   code: string;
   name: string;
+  spec?: string;
   unit: string;
   type: ItemType;
   quantity: string;
@@ -102,7 +106,15 @@ export type BomTreeDTO = {
 };
 
 export type BomRequirementsDTO = {
-  lines: { itemId: string; itemCode: string; itemName: string; unit: string; quantity: string; normQuantity: string }[];
+  lines: {
+    itemId: string;
+    itemCode: string;
+    itemName: string;
+    itemSpec?: string;
+    unit: string;
+    quantity: string;
+    normQuantity: string;
+  }[];
 };
 
 export type VoucherListRow = {
@@ -153,6 +165,7 @@ export type SummaryRow = {
   itemId: string;
   code: string;
   name: string;
+  spec?: string;
   unit: string;
   type: ItemType;
   opening: string;
@@ -168,6 +181,7 @@ export type SaleAmountReport = {
     itemId: string;
     code: string;
     name: string;
+    spec?: string;
     quantities: Record<string, string>;
     totalQuantity: string;
     price: string | null;
@@ -181,6 +195,7 @@ export type ReconRow = {
   itemId: string;
   code: string;
   name: string;
+  spec?: string;
   unit: string;
   norm: string;
   allowed: string;
@@ -193,7 +208,7 @@ export type ReconRow = {
 export type ReconResult = {
   rows: ReconRow[];
   /** Finished products received in the month that could not be expanded (no ACTIVE BOM) */
-  skipped: { itemId: string; code: string; name: string; quantity: string }[];
+  skipped: { itemId: string; code: string; name: string; spec?: string; quantity: string }[];
 };
 
 export type WhereUsedRow = {
@@ -230,7 +245,15 @@ export type OverviewDTO = {
   };
   /** Confirmed vouchers per day over the last 30 days (Vietnam time), oldest first */
   activity: { date: string; receipts: number; issues: number }[];
-  lowStock: { itemId: string; code: string; name: string; unit: string; onHand: string; minStock: string }[];
+  lowStock: {
+    itemId: string;
+    code: string;
+    name: string;
+    spec?: string;
+    unit: string;
+    onHand: string;
+    minStock: string;
+  }[];
   recentVouchers: {
     _id: string;
     voucherNo?: string;

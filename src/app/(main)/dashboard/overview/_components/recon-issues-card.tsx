@@ -48,6 +48,10 @@ export function ReconIssuesCard({
                 <div className="min-w-0">
                   <div className="truncate font-medium">{r.code}</div>
                   <div className="text-muted-foreground truncate text-xs">
+                    {r.name}
+                    {r.spec ? ` · ${r.spec}` : ""}
+                  </div>
+                  <div className="text-muted-foreground truncate text-xs">
                     {t("Norm")} {formatQty(r.norm)} · {t("Actual")} {formatQty(r.actual)} {r.unit}
                   </div>
                 </div>

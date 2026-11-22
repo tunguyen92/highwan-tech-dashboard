@@ -46,6 +46,7 @@ const bomEditorSchema = z.object({
       itemId: z.string().nullable(),
       itemCode: z.string(),
       itemName: z.string(),
+      itemSpec: z.string().optional(),
       unit: z.string(),
       quantity: z.string(),
       scrapPercent: z.string(),
@@ -94,6 +95,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
         itemId: line.itemId,
         itemCode: line.itemCode,
         itemName: line.itemName,
+        itemSpec: line.itemSpec,
         unit: line.unit,
         quantity: line.quantity,
         scrapPercent: String(line.scrapPercent),
@@ -116,6 +118,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
     if (patch.itemId !== undefined) form.setValue(`lines.${index}.itemId`, patch.itemId, options);
     if (patch.itemCode !== undefined) form.setValue(`lines.${index}.itemCode`, patch.itemCode, options);
     if (patch.itemName !== undefined) form.setValue(`lines.${index}.itemName`, patch.itemName, options);
+    if (patch.itemSpec !== undefined) form.setValue(`lines.${index}.itemSpec`, patch.itemSpec, options);
     if (patch.unit !== undefined) form.setValue(`lines.${index}.unit`, patch.unit, options);
     if (patch.quantity !== undefined) form.setValue(`lines.${index}.quantity`, patch.quantity, options);
     if (patch.scrapPercent !== undefined) form.setValue(`lines.${index}.scrapPercent`, patch.scrapPercent, options);
@@ -139,6 +142,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
             itemId: item._id,
             itemCode: item.code,
             itemName: item.name,
+            itemSpec: item.spec,
             unit: item.unit,
             quantity,
             scrapPercent: "0",
@@ -213,6 +217,9 @@ export function BomEditor({ bomId }: { bomId: string }) {
           <span className="flex flex-wrap items-center gap-2">
             {bom.outputItemCode}
             <span className="text-muted-foreground text-base font-normal">{outputItem?.name}</span>
+            {outputItem?.spec ? (
+              <span className="text-muted-foreground text-base font-normal">{outputItem.spec}</span>
+            ) : null}
             <span className="text-base font-normal tabular-nums"> v{bom.version}</span>
             <BomStatusBadge status={bom.status} />
           </span>
@@ -277,6 +284,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
                   itemId: null,
                   itemCode: "",
                   itemName: "",
+                  itemSpec: undefined,
                   unit: "",
                   quantity: "",
                   scrapPercent: "0",

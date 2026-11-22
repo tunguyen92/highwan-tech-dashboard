@@ -124,6 +124,7 @@ export function BomsScreen() {
             <TableRow>
               <TableHead>{t("Code")}</TableHead>
               <TableHead>{t("Name")}</TableHead>
+              <TableHead>{t("Spec")}</TableHead>
               <TableHead>{t("Version")}</TableHead>
               <TableHead>{t("Status")}</TableHead>
               <TableHead className="text-right">{t("Lines")}</TableHead>
@@ -132,8 +133,8 @@ export function BomsScreen() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <LoadingRows columns={7} /> : null}
-            {!loading && rows.length === 0 ? <EmptyRow columns={7} text={t("No BOMs yet.")} /> : null}
+            {loading ? <LoadingRows columns={8} /> : null}
+            {!loading && rows.length === 0 ? <EmptyRow columns={8} text={t("No BOMs yet.")} /> : null}
             {!loading &&
               rows.map((bom) => (
                 <TableRow key={bom._id}>
@@ -143,6 +144,7 @@ export function BomsScreen() {
                     </Link>
                   </TableCell>
                   <TableCell>{bom.outputItemName || bom.outputItemCode}</TableCell>
+                  <TableCell>{bom.outputItemSpec || "-"}</TableCell>
                   <TableCell className="tabular-nums">v{bom.version}</TableCell>
                   <TableCell>
                     <BomStatusBadge status={bom.status} />

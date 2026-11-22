@@ -68,6 +68,7 @@ export function ReconciliationReport() {
               [
                 t("Code"),
                 t("Name"),
+                t("Spec"),
                 t("UoM"),
                 t("Per BOM"),
                 t("Max allowed"),
@@ -79,6 +80,7 @@ export function ReconciliationReport() {
               rows.map((r) => [
                 r.code,
                 r.name,
+                r.spec ?? "",
                 r.unit,
                 r.norm,
                 r.allowed,
@@ -119,7 +121,7 @@ export function ReconciliationReport() {
       {skipped.length > 0 ? (
         <div className="mx-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/15 dark:text-amber-300">
           {t("Could not calculate the requirement for")}{" "}
-          {skipped.map((p) => `${p.code} (${formatQty(p.quantity)})`).join(", ")}{" "}
+          {skipped.map((p) => `${p.code}${p.spec ? ` · ${p.spec}` : ""} (${formatQty(p.quantity)})`).join(", ")}{" "}
           {t("because they have no active BOM. Materials of these products appear as 'No BOM' if they were issued.")}
         </div>
       ) : null}
@@ -129,6 +131,7 @@ export function ReconciliationReport() {
           <TableRow>
             <TableHead>{t("Code")}</TableHead>
             <TableHead>{t("Name")}</TableHead>
+            <TableHead>{t("Spec")}</TableHead>
             <TableHead>{t("UoM")}</TableHead>
             <TableHead className="text-right">{t("Per BOM")}</TableHead>
             <TableHead className="text-right">{t("Max allowed")}</TableHead>
@@ -139,13 +142,14 @@ export function ReconciliationReport() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? <LoadingRows columns={9} /> : null}
-          {!loading && rows.length === 0 ? <EmptyRow columns={9} text={t("No data for this month.")} /> : null}
+          {loading ? <LoadingRows columns={10} /> : null}
+          {!loading && rows.length === 0 ? <EmptyRow columns={10} text={t("No data for this month.")} /> : null}
           {!loading &&
             rows.map((row) => (
               <TableRow key={row.itemId}>
                 <TableCell className="font-medium">{row.code}</TableCell>
                 <TableCell>{row.name}</TableCell>
+                <TableCell>{row.spec || "-"}</TableCell>
                 <TableCell>{row.unit}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatQty(row.norm)}</TableCell>
                 <TableCell className="text-muted-foreground text-right tabular-nums">

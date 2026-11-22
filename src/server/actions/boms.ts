@@ -9,6 +9,7 @@ import { calculateBomRequirements, getBomTree } from "@/server/lib/bom-explode";
 import { activateBom, listBomsPage } from "@/server/lib/bom-service";
 import { bomFilterSchema, bomLinesSchema, bomPageFilterSchema, objectId, qty } from "@/server/lib/schemas";
 import { Bom } from "@/server/models/bom";
+import { Item } from "@/server/models/item";
 
 export async function listBomsPageAction(input: unknown = {}) {
   return run("bom:read", async () => listBomsPage(bomPageFilterSchema.parse(input)));
@@ -31,7 +32,16 @@ export async function listBomsAction(input: unknown = {}) {
 }
 
 export async function getBomAction(bomId: unknown) {
-  return run("bom:read", async () => Bom.findById(objectId.parse(bomId)).lean());
+  return run("bom:read", async () => {
+    const bom = await Bom.findById(objectId.parse(bomId)).lean();
+    if (!bom) return null;
+    const items = await Item.find({ _id: { $in: bom.lines.map((line) => line.itemId) } }, "spec").lean();
+    const specById = new Map(items.map((item) => [String(item._id), item.spec]));
+    return {
+      ...bom,
+      lines: bom.lines.map((line) => ({ ...line, itemSpec: specById.get(String(line.itemId)) })),
+    };
+  });
 }
 
 export async function createBomDraftAction(outputItemId: unknown, lines: unknown, note?: unknown) {

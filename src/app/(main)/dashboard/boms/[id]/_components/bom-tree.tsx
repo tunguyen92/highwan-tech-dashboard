@@ -22,6 +22,7 @@ function TreeNode({ node, depth }: { node: BomTreeNodeDTO; depth: number }) {
         <Icon className="text-muted-foreground size-4 shrink-0" />
         <span className="font-medium">{node.code}</span>
         <span className="text-muted-foreground">{node.name}</span>
+        {node.spec ? <span className="text-muted-foreground">{node.spec}</span> : null}
         <span className="tabular-nums">
           {formatQty(node.quantity)} {node.unit}
         </span>

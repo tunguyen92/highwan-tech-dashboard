@@ -78,8 +78,8 @@ export function StockScreen() {
     if (allRows === null) return;
     downloadCsv(
       "ton-kho.csv",
-      [t("Code"), t("Name"), t("UoM"), t("Current stock"), t("Previous month stock"), t("Minimum stock")],
-      allRows.map((r) => [r.code, r.name, r.unit, r.onHand, r.previousMonthOnHand, r.minStock]),
+      [t("Code"), t("Name"), t("Spec"), t("UoM"), t("Current stock"), t("Previous month stock"), t("Minimum stock")],
+      allRows.map((r) => [r.code, r.name, r.spec ?? "", r.unit, r.onHand, r.previousMonthOnHand, r.minStock]),
     );
   }
 
@@ -151,6 +151,7 @@ export function StockScreen() {
             <TableRow>
               <TableHead>{t("Code")}</TableHead>
               <TableHead>{t("Name")}</TableHead>
+              <TableHead>{t("Spec")}</TableHead>
               <TableHead>{t("UoM")}</TableHead>
               <TableHead className="text-right">{t("Current stock")}</TableHead>
               <TableHead className="text-right">{t("Previous month stock")}</TableHead>
@@ -160,13 +161,14 @@ export function StockScreen() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <LoadingRows columns={8} /> : null}
-            {!loading && rows.length === 0 ? <EmptyRow columns={8} text={t("No items yet.")} /> : null}
+            {loading ? <LoadingRows columns={9} /> : null}
+            {!loading && rows.length === 0 ? <EmptyRow columns={9} text={t("No items yet.")} /> : null}
             {!loading &&
               rows.map((row) => (
                 <TableRow key={row.itemId}>
                   <TableCell className="font-medium">{row.code}</TableCell>
                   <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.spec || "-"}</TableCell>
                   <TableCell>{row.unit}</TableCell>
                   <TableCell className={`text-right font-medium tabular-nums ${row.isLow ? "text-destructive" : ""}`}>
                     {formatQty(row.onHand)}

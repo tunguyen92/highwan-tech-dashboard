@@ -34,7 +34,10 @@ export function LowStockCard({ rows, total }: { rows: OverviewDTO["lowStock"]; t
               <li key={row.itemId} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <div className="min-w-0">
                   <div className="truncate font-medium">{row.code}</div>
-                  <div className="text-muted-foreground truncate text-xs">{row.name}</div>
+                  <div className="text-muted-foreground truncate text-xs">
+                    {row.name}
+                    {row.spec ? ` · ${row.spec}` : ""}
+                  </div>
                 </div>
                 <Badge variant="destructive" className="shrink-0 tabular-nums">
                   {formatQty(row.onHand)} / {formatQty(row.minStock)} {row.unit}

@@ -62,8 +62,8 @@ export function BomExplodePanel({
             onClick={() =>
               downloadCsv(
                 `nhu-cau-${outputItemCode}.csv`,
-                [t("Code"), t("Name"), t("UoM"), t("Requirement per BOM"), t("Rounded up")],
-                result.lines.map((l) => [l.itemCode, l.itemName, l.unit, l.normQuantity, l.quantity]),
+                [t("Code"), t("Name"), t("Spec"), t("UoM"), t("Requirement per BOM"), t("Rounded up")],
+                result.lines.map((l) => [l.itemCode, l.itemName, l.itemSpec ?? "", l.unit, l.normQuantity, l.quantity]),
               )
             }
           >
@@ -83,6 +83,7 @@ export function BomExplodePanel({
             <TableRow>
               <TableHead>{t("Code")}</TableHead>
               <TableHead>{t("Name")}</TableHead>
+              <TableHead>{t("Spec")}</TableHead>
               <TableHead>{t("UoM")}</TableHead>
               <TableHead className="text-right">{t("Per BOM")}</TableHead>
               <TableHead className="text-right">{t("Rounded up")}</TableHead>
@@ -93,6 +94,7 @@ export function BomExplodePanel({
               <TableRow key={line.itemId}>
                 <TableCell className="font-medium">{line.itemCode}</TableCell>
                 <TableCell>{line.itemName}</TableCell>
+                <TableCell>{line.itemSpec || "-"}</TableCell>
                 <TableCell>{line.unit}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatQty(line.normQuantity)}</TableCell>
                 <TableCell className="text-right font-medium tabular-nums">{formatQty(line.quantity)}</TableCell>

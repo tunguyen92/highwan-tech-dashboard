@@ -100,6 +100,7 @@ export function VoucherSheetLines({
                       <span>
                         <span className="font-medium">{item?.code}</span>
                         <span className="text-muted-foreground"> · {item?.name}</span>
+                        {item?.spec ? <span className="text-muted-foreground"> · {item.spec}</span> : null}
                       </span>
                     )}
                   </TableCell>

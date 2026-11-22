@@ -8,7 +8,7 @@ import { Voucher } from "@/server/models/voucher";
 const ReportDecimal = Decimal.clone({ precision: 150 });
 
 export async function getSaleAmount(from: Date, to: Date, productionLine?: string): Promise<SaleAmountReport> {
-  const items = await Item.find({ type: ITEM_TYPE.PRODUCT }, "code name productionLine price").lean();
+  const items = await Item.find({ type: ITEM_TYPE.PRODUCT }, "code name spec productionLine price").lean();
   const productionLines = [
     ...new Set(items.flatMap((item) => (item.productionLine ? [item.productionLine] : []))),
   ].sort((a, b) => a.localeCompare(b));
@@ -48,6 +48,7 @@ export async function getSaleAmount(from: Date, to: Date, productionLine?: strin
           itemId,
           code: item.code,
           name: item.name,
+          spec: item.spec,
           quantities: {},
           totalQuantity: "0",
           price: item.price == null ? null : new ReportDecimal(item.price.toString()).toFixed(),

@@ -105,6 +105,7 @@ export async function calculateBomRequirements(productId: string, quantity: stri
       itemId: id,
       itemCode: it.code,
       itemName: it.name,
+      itemSpec: it.spec,
       unit: it.unit,
       // Round up to the unit's supported precision; the storekeeper then adjusts to the actual issued quantity
       quantity: n.norm.toDecimalPlaces(maxQuantityDecimalPlacesForUnit(it.unit), Decimal.ROUND_UP).toString(),
@@ -120,6 +121,7 @@ export type BomTreeNode = {
   itemId: string;
   code: string;
   name: string;
+  spec?: string;
   unit: string;
   type: string;
   quantity: string; // per ONE unit of the parent
@@ -152,6 +154,7 @@ export async function getBomTree(bomId: string) {
         itemId: id,
         code: it?.code ?? l.itemCode,
         name: it?.name ?? l.itemName,
+        spec: it?.spec,
         unit: it?.unit ?? l.unit,
         type: it?.type ?? ITEM_TYPE.MATERIAL,
         quantity: l.quantity.toString(),

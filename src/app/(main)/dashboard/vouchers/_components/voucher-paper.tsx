@@ -154,7 +154,15 @@ export function VoucherPaper({
             <tr key={`${line.item?._id ?? "empty"}-${index}`}>
               <td className="border border-black p-2">{index + 1}</td>
               <td className="border border-black p-2">{line.item?.code}</td>
-              <td className="border border-black p-2">{line.item?.name}</td>
+              <td className="border border-black p-2">
+                {line.item?.name}
+                {line.item?.spec ? (
+                  <>
+                    <br />
+                    <span>{line.item.spec}</span>
+                  </>
+                ) : null}
+              </td>
               <td className="border border-black p-2 text-right">
                 {formatQty(line.quantity)}
                 {direction === "OUT" && units.length > 1 && line.item?.unit ? ` ${line.item.unit}` : ""}

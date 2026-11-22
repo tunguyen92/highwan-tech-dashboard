@@ -103,6 +103,7 @@ export const vi: Record<string, string> = {
   "Paste from Excel": "Dán từ Excel",
   "Qty / 1 unit": "SL / 1 đơn vị",
   UoM: "ĐVT",
+  Spec: "Thông số",
   Specifications: "Thông số",
   "Allowed scrap (%)": "Hao hụt cho phép (%)",
   Notes: "Ghi chú",
