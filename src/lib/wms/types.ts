@@ -25,6 +25,7 @@ export type StockRow = {
   type: ItemType;
   productionLine?: string;
   onHand: string;
+  previousMonthOnHand: string;
   minStock: string;
   isLow: boolean;
 };

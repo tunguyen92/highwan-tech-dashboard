@@ -103,7 +103,7 @@ export function BomsScreen() {
             }}
           >
             <SelectTrigger size="sm">
-              <span className="text-muted-foreground">{t("Status:")}</span>
+              <span className="text-muted-foreground">{t("Status")}:</span>
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" align="start">

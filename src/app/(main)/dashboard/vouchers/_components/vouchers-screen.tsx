@@ -32,7 +32,12 @@ import { EmptyRow, LoadingRows } from "../../_components/wms/table-states";
 import { useCan } from "../../_components/wms/user-context";
 import { VoucherSheet } from "./voucher-sheet";
 
-type ListResult = { rows: VoucherListRow[]; total: number; page: number; pageSize: number };
+type ListResult = {
+  rows: VoucherListRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 const PAGE_SIZE = 20;
 
 export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
@@ -117,7 +122,7 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
             }}
           >
             <SelectTrigger size="sm">
-              <span className="text-muted-foreground">{t("Type:")}</span>
+              <span className="text-muted-foreground">{t("Type")}:</span>
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" align="start">
@@ -140,7 +145,7 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
             }}
           >
             <SelectTrigger size="sm">
-              <span className="text-muted-foreground">{t("Status:")}</span>
+              <span className="text-muted-foreground">{t("Status")}:</span>
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" align="start">
@@ -156,7 +161,7 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
           </Select>
 
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">{t("Month:")}</span>
+            <span className="text-muted-foreground">{t("Month")}:</span>
             <CalendarDatePicker
               id="vouchers-period"
               type="month"

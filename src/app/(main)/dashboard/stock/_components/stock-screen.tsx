@@ -78,8 +78,8 @@ export function StockScreen() {
     if (allRows === null) return;
     downloadCsv(
       "ton-kho.csv",
-      [t("Code"), t("Name"), t("UoM"), t("Current stock"), t("Minimum stock")],
-      allRows.map((r) => [r.code, r.name, r.unit, r.onHand, r.minStock]),
+      [t("Code"), t("Name"), t("UoM"), t("Current stock"), t("Previous month stock"), t("Minimum stock")],
+      allRows.map((r) => [r.code, r.name, r.unit, r.onHand, r.previousMonthOnHand, r.minStock]),
     );
   }
 
@@ -153,14 +153,15 @@ export function StockScreen() {
               <TableHead>{t("Name")}</TableHead>
               <TableHead>{t("UoM")}</TableHead>
               <TableHead className="text-right">{t("Current stock")}</TableHead>
+              <TableHead className="text-right">{t("Previous month stock")}</TableHead>
               <TableHead className="text-right">{t("Minimum")}</TableHead>
               <TableHead>{t("Status")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <LoadingRows columns={7} /> : null}
-            {!loading && rows.length === 0 ? <EmptyRow columns={7} text={t("No items yet.")} /> : null}
+            {loading ? <LoadingRows columns={8} /> : null}
+            {!loading && rows.length === 0 ? <EmptyRow columns={8} text={t("No items yet.")} /> : null}
             {!loading &&
               rows.map((row) => (
                 <TableRow key={row.itemId}>
@@ -169,6 +170,9 @@ export function StockScreen() {
                   <TableCell>{row.unit}</TableCell>
                   <TableCell className={`text-right font-medium tabular-nums ${row.isLow ? "text-destructive" : ""}`}>
                     {formatQty(row.onHand)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-right tabular-nums">
+                    {formatQty(row.previousMonthOnHand)}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-right tabular-nums">
                     {formatQty(row.minStock)}

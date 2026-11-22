@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import { Download } from "lucide-react";
 
+import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useT } from "@/lib/i18n/provider";
@@ -57,22 +57,21 @@ export function StockCardSheet({ item, onClose }: { item: StockRow | null; onClo
       <SheetContent className="w-full gap-0 data-[state=right]:sm:max-w-3xl!">
         <SheetHeader className="border-b">
           <SheetTitle>
-            {t("Stock card:")} {item?.code} {item ? ` - ${item.name}` : ""}
+            {t("Stock card")}: {item?.code} {item ? ` - ${item.name}` : ""}
           </SheetTitle>
           <SheetDescription>
-            {t("Unit of measure:")} {item?.unit}
-            {t(". The balance is calculated in date order.")}
+            {t("Unit of measure")}: {item?.unit}. {t("The balance is calculated in date order")}.
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-wrap items-end gap-3 p-4">
           <Field className="w-40">
             <FieldLabel htmlFor="card-from">{t("From")}</FieldLabel>
-            <Input id="card-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+            <CalendarDatePicker id="card-from" value={from} max={to} onChange={setFrom} />
           </Field>
           <Field className="w-40">
             <FieldLabel htmlFor="card-to">{t("To")}</FieldLabel>
-            <Input id="card-to" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+            <CalendarDatePicker id="card-to" value={to} min={from} onChange={setTo} />
           </Field>
           <Button variant="outline" size="sm" className="ml-auto" onClick={exportCsv} disabled={!data}>
             <Download /> {t("Export CSV")}

@@ -137,7 +137,7 @@ export function ItemFormDialog({
           <FieldGroup className="gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={!!errors.code}>
-                <FieldLabel htmlFor="item-code">{t("Code *")}</FieldLabel>
+                <FieldLabel htmlFor="item-code">{t("Code")} *</FieldLabel>
                 <Input id="item-code" maxLength={50} aria-invalid={!!errors.code} {...form.register("code")} />
                 {errors.code?.message ? <FieldError>{t(errors.code.message)}</FieldError> : null}
               </Field>
@@ -146,7 +146,7 @@ export function ItemFormDialog({
                 name="type"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="item-type">{t("Type *")}</FieldLabel>
+                    <FieldLabel htmlFor="item-type">{t("Type")} *</FieldLabel>
                     <Select name={field.name} value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger
                         id="item-type"
@@ -174,7 +174,7 @@ export function ItemFormDialog({
             </div>
 
             <Field data-invalid={!!errors.name}>
-              <FieldLabel htmlFor="item-name">{t("Name *")}</FieldLabel>
+              <FieldLabel htmlFor="item-name">{t("Name")} *</FieldLabel>
               <Input id="item-name" maxLength={200} aria-invalid={!!errors.name} {...form.register("name")} />
               {errors.name?.message ? <FieldError>{t(errors.name.message)}</FieldError> : null}
             </Field>
@@ -222,7 +222,7 @@ export function ItemFormDialog({
                 name="unit"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="item-unit">{t("Unit of measure *")}</FieldLabel>
+                    <FieldLabel htmlFor="item-unit">{t("Unit of measure")} *</FieldLabel>
                     <Select name={field.name} value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger
                         id="item-unit"
@@ -231,7 +231,7 @@ export function ItemFormDialog({
                         onBlur={field.onBlur}
                         aria-invalid={fieldState.invalid}
                       >
-                        <SelectValue placeholder={t("Select unit")} />
+                        <SelectValue placeholder={t("Select a unit")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>

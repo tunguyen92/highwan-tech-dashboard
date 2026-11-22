@@ -6,6 +6,7 @@ import { Item } from "@/server/models/item";
 import { StockTransaction } from "@/server/models/stock-transaction";
 
 import { explodeBom } from "./bom-explode";
+import { vnPeriod } from "./decimal";
 
 const dec = (v: any) => new Decimal(v ? v.toString() : 0);
 
@@ -18,6 +19,7 @@ type CurrentStockAggregateRow = {
   unit: string;
   type: "MATERIAL" | "PRODUCT";
   onHand: Types.Decimal128;
+  previousMonthOnHand: Types.Decimal128;
   minStock: Types.Decimal128;
   isLow: boolean;
 };
@@ -36,12 +38,31 @@ function currentStockBaseStages(f: CurrentStockFilter): PipelineStage[] {
   }
 
   const zero = { $toDecimal: 0 };
+  const currentMonthStart = new Date(`${vnPeriod(new Date())}-01T00:00:00+07:00`);
   return [
     { $match: match },
     { $lookup: { from: "inventories", localField: "_id", foreignField: "itemId", as: "inv" } },
     {
+      $lookup: {
+        from: "stocktransactions",
+        let: { targetItemId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ["$itemId", "$$targetItemId"] }, { $lt: ["$businessDate", currentMonthStart] }],
+              },
+            },
+          },
+          { $group: { _id: null, onHand: { $sum: "$signedQuantity" } } },
+        ],
+        as: "previousStock",
+      },
+    },
+    {
       $addFields: {
         onHand: { $ifNull: [{ $arrayElemAt: ["$inv.onHand", 0] }, zero] },
+        previousMonthOnHand: { $ifNull: [{ $arrayElemAt: ["$previousStock.onHand", 0] }, zero] },
       },
     },
     { $addFields: { isLow: { $lt: ["$onHand", { $ifNull: ["$minStock", zero] }] } } },
@@ -57,6 +78,7 @@ function mapCurrentStockRows(rows: CurrentStockAggregateRow[]) {
     unit: r.unit,
     type: r.type,
     onHand: dec(r.onHand).toString(),
+    previousMonthOnHand: dec(r.previousMonthOnHand).toString(),
     minStock: dec(r.minStock).toString(),
     isLow: r.isLow,
   }));
@@ -235,7 +257,7 @@ export async function getCurrentStock(f: CurrentStockFilter) {
     ...currentStockBaseStages(f),
     ...(f.lowOnly ? [{ $match: { isLow: true } }] : []),
     { $sort: { code: 1, _id: 1 } },
-    { $project: { inv: 0 } },
+    { $project: { inv: 0, previousStock: 0 } },
   ]);
   return mapCurrentStockRows(rows);
 }
@@ -251,7 +273,7 @@ export async function getCurrentStockPage(f: CurrentStockFilter & { page: number
           { $sort: { code: 1, _id: 1 } },
           { $skip: (f.page - 1) * f.pageSize },
           { $limit: f.pageSize },
-          { $project: { inv: 0 } },
+          { $project: { inv: 0, previousStock: 0 } },
         ],
         total: [...lowOnlyStages, { $count: "count" }],
         lowCount: [{ $match: { isLow: true } }, { $count: "count" }],
