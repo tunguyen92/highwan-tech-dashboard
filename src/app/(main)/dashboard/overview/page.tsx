@@ -14,10 +14,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Page() {
-  // const user = await getCurrentUser();
-  // if (!user) redirect('/login');
-
-  // Administrator-only screen; the Server Action checks the same permission again.
-  // if (!can(user.role, 'overview:read')) redirect('/dashboard/stock');
   return <OverviewScreen />;
 }

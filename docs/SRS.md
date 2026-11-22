@@ -92,7 +92,7 @@ Ký hiệu: _Quyền_ là quyền tối thiểu cần có (bảng ở mục 7).
 
 | Mã        | Yêu cầu                                                                                                                                                                                  | Quyền      |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| FR-ITM-01 | Tạo mã hàng: mã (chuẩn hóa chữ hoa, duy nhất), tên, loại (MATERIAL`/SEMI`/`PRODUCT`), đơn vị, nhóm, tồn tối thiểu, cờ “không đối chiếu”, quy cách (tham khảo), ghi chú; M/KG nhận số lẻ tối đa 10 chữ số, các đơn vị khác chỉ nhận số nguyên | item:write |
+| FR-ITM-01 | Tạo mã hàng: mã (chuẩn hóa chữ hoa, duy nhất), tên, loại (MATERIAL`/SEMI`/`PRODUCT`), đơn vị, nhóm, tồn tối thiểu, cờ “không đối chiếu”, thông số (tham khảo), ghi chú; M/KG nhận số lẻ tối đa 10 chữ số, các đơn vị khác chỉ nhận số nguyên | item:write |
 | FR-ITM-02 | isStocked luôn suy ra từ loại: SEMI là false, còn lại true; không sửa tay                                                                                                                | item:write |
 | FR-ITM-03 | Khi mã đã xuất hiện trong phiếu, giao dịch kho hoặc định mức, _khóa_ việc đổi code, type, unit (lỗi ITEM_FIELD_LOCKED). Đổi tên, nhóm, tồn tối thiểu, ghi chú vẫn được | item:write |
 | FR-ITM-04 | Ngừng sử dụng (ẩn) thay vì xóa. Không ngừng được mã còn tồn kho > 0 (ITEM_HAS_STOCK)                                                                                                     | item:write |

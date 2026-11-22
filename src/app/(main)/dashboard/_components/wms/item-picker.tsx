@@ -67,7 +67,7 @@ export function ItemPicker({
       </PopoverTrigger>
       <PopoverContent className="w-[min(380px,90vw)] p-0" align="start">
         <Command>
-          <CommandInput placeholder={t("Search by code, name, or spec...")} />
+          <CommandInput placeholder={t("Search by code, name, or specifications...")} />
           <CommandList>
             <CommandEmpty>{t("No item found.")}</CommandEmpty>
             <CommandGroup>

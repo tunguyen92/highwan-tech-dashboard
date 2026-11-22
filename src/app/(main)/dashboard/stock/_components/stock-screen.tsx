@@ -96,7 +96,7 @@ export function StockScreen() {
               </InputGroupAddon>
               <InputGroupInput
                 className="h-7"
-                placeholder={t("Search by code, name, or spec...")}
+                placeholder={t("Search by code, name, or specifications...")}
                 value={q}
                 onChange={(event) => {
                   setQ(event.target.value);

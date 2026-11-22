@@ -24,7 +24,7 @@ export const ko: Record<string, string> = {
   "Enter a reason (required)": "사유를 입력하세요(필수)",
   Close: "닫기",
   "Select an item...": "품목 선택...",
-  "Search by code, name, or spec...": "코드, 이름 또는 규격으로 검색...",
+  "Search by code, name, or specifications...": "코드, 이름 또는 규격으로 검색...",
   "Price (VND)": "가격(VND)",
   "Production line": "생산 라인",
   "Select production line": "생산 라인 선택",
