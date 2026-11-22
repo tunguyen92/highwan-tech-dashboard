@@ -96,3 +96,15 @@ Keep a component inside its route until it is reused by another feature. Do not 
 - Include screenshots for new screens and material visual changes. Include mobile and dark-theme states when relevant.
 - Explain new reusable patterns or dependencies in the pull request.
 - Follow `CONTRIBUTING.md` for the contribution workflow.
+
+## Pre-commit validation
+
+Before creating or retrying a git commit:
+
+1. Stage the intended files.
+2. Run `npm run check:precommit`.
+3. If the command formats or fixes files, review the result and restage every modified staged file.
+4. Run `npm run check:precommit` again before committing.
+5. Do not bypass the Husky hook with `--no-verify`.
+
+`check:precommit` runs theme preset generation and `lint-staged` with the same Biome checks used by `.husky/pre-commit`.

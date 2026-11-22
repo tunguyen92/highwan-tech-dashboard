@@ -11,6 +11,7 @@
     "format": "biome format --write",
     "check": "biome check",
     "check:fix": "biome check --write",
+    "check:precommit": "npm run generate:presets && npm exec -- lint-staged --no-stash",
     "prepare": "husky",
     "generate:presets": "ts-node -P tsconfig.scripts.json src/scripts/generate-theme-presets.ts"
   },
