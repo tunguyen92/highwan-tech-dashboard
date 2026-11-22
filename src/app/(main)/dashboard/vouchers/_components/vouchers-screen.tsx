@@ -195,7 +195,11 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
                     <Button
                       variant="link"
                       className="h-auto p-0 font-medium underline underline-offset-4"
-                      onClick={() => setSheet({ id: row._id })}
+                      onClick={() =>
+                        isImport
+                          ? router.push(`/dashboard/vouchers/import/new?id=${encodeURIComponent(row._id)}`)
+                          : setSheet({ id: row._id })
+                      }
                     >
                       <span className="flex flex-col items-start">
                         <span>{row.documentNumber ?? row.voucherNo ?? t("(Draft)")}</span>
@@ -218,7 +222,7 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
         <PaginationBar page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
       </PageCard>
 
-      {sheet ? (
+      {sheet && !isImport ? (
         <VoucherSheet
           key={sheet.id ?? "new"}
           direction={direction}

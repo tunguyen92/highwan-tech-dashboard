@@ -292,6 +292,18 @@ export const ko: Record<string, string> = {
   "This voucher belongs to the other voucher list.": "이 전표는 다른 전표 목록에 속합니다.",
   "Enter the document number, date, and item lines. Review the document before printing or exporting.":
     "문서 번호, 날짜 및 품목 행을 입력하세요. 인쇄하거나 내보내기 전에 문서를 확인하세요.",
+  "Enter the voucher details, then enter quantities only for the items available in the catalog.":
+    "전표 정보를 입력한 후 카탈로그에서 제공되는 품목의 수량만 입력하세요.",
+  "Add item lines, search for an item, and enter its received quantity.":
+    "품목 행을 추가하고 품목을 검색한 후 입고 수량을 입력하세요.",
+  "Quantity for line {line}": "{line}번 행 수량",
+  "Received items": "입고 품목",
+  "Items come from the catalog. Leave the quantity blank for items not included.":
+    "품목은 카탈로그에서 제공됩니다. 포함하지 않는 품목의 수량은 비워 두세요.",
+  "Enter a quantity for at least one item.": "하나 이상의 품목 수량을 입력하세요.",
+  "Every item entered needs a valid quantity for its unit.":
+    "입력한 각 품목의 수량은 해당 단위에 맞게 유효해야 합니다.",
+  "Quantity for {code}": "{code} 수량",
   "Lines that do not fit the new voucher type were removed.": "새 전표 유형에 맞지 않는 행이 제거되었습니다.",
   "The voucher needs at least one line with an item.": "전표에는 품목이 포함된 행이 하나 이상 필요합니다.",
   "Draft voucher saved.": "전표 초안이 저장되었습니다.",

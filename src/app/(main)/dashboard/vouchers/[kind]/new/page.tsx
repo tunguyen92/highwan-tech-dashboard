@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 
 import { getServerT } from "@/lib/i18n/server";
 
-import { VoucherDocumentEditor } from "../../_components/voucher-document-editor";
+import { GoodsIssueEditor } from "../../_components/goods-issue-editor";
+import { GoodsReceiptEditor } from "../../_components/goods-receipt-editor";
 
 type Props = {
   params: Promise<{ kind: string }>;
@@ -24,10 +25,7 @@ export default async function Page({ params, searchParams }: Props) {
   if (kind !== "import" && kind !== "export") notFound();
 
   const { id } = await searchParams;
-  return (
-    <VoucherDocumentEditor
-      direction={kind === "import" ? "IN" : "OUT"}
-      voucherId={typeof id === "string" ? id : null}
-    />
-  );
+  const voucherId = typeof id === "string" ? id : null;
+
+  return kind === "import" ? <GoodsReceiptEditor voucherId={voucherId} /> : <GoodsIssueEditor voucherId={voucherId} />;
 }

@@ -295,6 +295,18 @@ export const vi: Record<string, string> = {
   "This voucher belongs to the other voucher list.": "Phiếu này thuộc danh sách phiếu còn lại.",
   "Enter the document number, date, and item lines. Review the document before printing or exporting.":
     "Nhập số chứng từ, ngày và các dòng hàng. Kiểm tra phiếu trước khi in hoặc xuất tệp.",
+  "Enter the voucher details, then enter quantities only for the items available in the catalog.":
+    "Nhập thông tin phiếu, sau đó chỉ nhập số lượng cho các mã hàng có sẵn trong danh mục.",
+  "Add item lines, search for an item, and enter its received quantity.":
+    "Thêm dòng hàng, tìm mã hàng và nhập số lượng thực nhập.",
+  "Quantity for line {line}": "Số lượng dòng {line}",
+  "Received items": "Mặt hàng nhập",
+  "Items come from the catalog. Leave the quantity blank for items not included.":
+    "Các mã hàng lấy từ danh mục có sẵn. Để trống số lượng đối với mã hàng không nhập.",
+  "Enter a quantity for at least one item.": "Nhập số lượng cho ít nhất một mã hàng.",
+  "Every item entered needs a valid quantity for its unit.":
+    "Mỗi mã hàng đã nhập phải có số lượng hợp lệ theo đơn vị tính.",
+  "Quantity for {code}": "Số lượng của {code}",
   "Lines that do not fit the new voucher type were removed.": "Đã bỏ các dòng không phù hợp với loại phiếu mới.",
   "The voucher needs at least one line with an item.": "Phiếu cần ít nhất một dòng có mã hàng.",
   "Draft voucher saved.": "Đã lưu phiếu nháp.",

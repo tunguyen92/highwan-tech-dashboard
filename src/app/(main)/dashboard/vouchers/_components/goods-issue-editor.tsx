@@ -65,7 +65,8 @@ const voucherDocumentFormSchema = z.object({
 
 type VoucherDocumentFormValues = z.infer<typeof voucherDocumentFormSchema>;
 
-export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN" | "OUT"; voucherId: string | null }) {
+export function GoodsIssueEditor({ voucherId }: { voucherId: string | null }) {
+  const direction = "OUT";
   const t = useT();
   const router = useRouter();
   const canWrite = useCan("voucher:write");
@@ -83,7 +84,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
   const form = useForm<VoucherDocumentFormValues>({
     resolver: zodResolver(voucherDocumentFormSchema),
     defaultValues: {
-      type: direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCT",
+      type: "EXPORT_PRODUCT",
       date: todayYmd(),
       documentNumber: "",
       lines: [],
@@ -161,7 +162,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
         note: line.note ?? "",
       })),
     });
-  }, [direction, loaded, reset]);
+  }, [loaded, reset]);
 
   const itemById = new Map(items.map((item) => [item._id, item]));
   const rule = VOUCHER_RULES[type];
@@ -670,7 +671,7 @@ export function VoucherDocumentEditor({ direction, voucherId }: { direction: "IN
             <CardContent
               data-voucher-preview
               ref={previewContainerRef}
-              className="h-[calc(100svh-16rem)] overflow-auto rounded-b-xl bg-muted p-4"
+              className="bg-muted h-[calc(100svh-16rem)] overflow-auto rounded-b-xl p-4"
             >
               <VoucherPaper
                 direction={direction}

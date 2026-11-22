@@ -16,7 +16,7 @@ import { Voucher } from "@/server/models/voucher";
 export async function listVouchersAction(input: unknown = {}) {
   return run("voucher:read", async () => {
     const f = voucherFilterSchema.parse(input);
-    const match: any = {};
+    const match: Record<string, unknown> = {};
 
     if (f.direction) match.direction = f.direction;
     if (f.type) match.type = f.type;
@@ -62,8 +62,9 @@ export async function saveDraftAction(voucherId: unknown, input: unknown) {
 
 export async function deleteDraftAction(voucherId: unknown) {
   return run("voucher:write", async () => {
-    await deleteDraftVoucher(objectId.parse(voucherId));
-    return null;
+    const id = objectId.parse(voucherId);
+    await deleteDraftVoucher(id);
+    return { id: String(id) };
   });
 }
 
@@ -76,7 +77,8 @@ export async function confirmVoucherAction(voucherId: unknown) {
 
 export async function cancelVoucherAction(voucherId: unknown, reason: unknown) {
   return run("voucher:cancel", async (user) => {
-    await cancelVoucher(objectId.parse(voucherId), user.id, z.string().trim().min(1).max(500).parse(reason));
-    return null;
+    const id = objectId.parse(voucherId);
+    await cancelVoucher(id, user.id, z.string().trim().min(1).max(500).parse(reason));
+    return { id: String(id) };
   });
 }
