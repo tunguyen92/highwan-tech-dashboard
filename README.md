@@ -16,7 +16,7 @@ Most admin templates I found, free or paid, felt cluttered, outdated, or too rig
 > Looking for the TanStack Start version? Check out [tanstack-shadcn-admin-dashboard](https://github.com/arhamkhnz/tanstack-shadcn-admin-dashboard).
 
 > [!TIP]
-> I’m also working on Nuxt.js and Svelte versions of this dashboard. They’ll be live soon.
+> If you're looking for individual blocks, please refer to [Studio Blocks](https://studio-blocks.arhamkhnz.com/).
 
 ## Features
 
@@ -69,6 +69,7 @@ Most admin templates I found, free or paid, felt cluttered, outdated, or too rig
 - Infrastructure Dashboard  
 - File Manager  
 - Patient Monitoring  
+- Products Page  
 - Chat Page  
 - Email Page  
 - Profile  
@@ -124,6 +125,10 @@ _Deploy your own copy with one click._
    ```
 
 Your app will be running at [http://localhost:3000](http://localhost:3000)
+
+### Warehouse data
+
+Warehouse features use the configured MongoDB database and do not load or generate demo records. Set `MONGODB_URI` and `AUTH_SECRET` in `.env.local`, then follow [the MongoDB integration guide](./docs/INTEGRATION.md) to create indexes and the first administrator.
 
 ### Formatting and Linting
 

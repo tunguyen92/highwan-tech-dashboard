@@ -12,18 +12,32 @@ import { ThemeBootScript } from "@/scripts/theme-boot";
 import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
 
 import "./globals.css";
+import { I18nProvider } from "@/lib/i18n/provider";
+import { getLocale, getServerT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: APP_CONFIG.meta.title,
-  description: APP_CONFIG.meta.description,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    metadataBase: new URL(APP_CONFIG.url),
+    applicationName: APP_CONFIG.name,
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+    title: t(APP_CONFIG.meta.title),
+    description: t(APP_CONFIG.meta.description),
+    openGraph: {
+      title: t(APP_CONFIG.meta.title),
+      description: t(APP_CONFIG.meta.description),
+      locale: "vi_VN",
+    },
+  };
+}
+
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await getLocale();
   const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
     PREFERENCE_DEFAULTS;
   return (
     <html
-      lang="en"
+      lang={locale}
       data-theme-mode={theme_mode}
       data-theme-preset={theme_preset}
       data-content-layout={content_layout}
@@ -41,8 +55,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <QueryProvider>
           <TooltipProvider>
             <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
-              {children}
-              <Toaster />
+              <I18nProvider locale={locale}>
+                {children}
+                <Toaster />
+              </I18nProvider>
             </PreferencesStoreProvider>
           </TooltipProvider>
         </QueryProvider>

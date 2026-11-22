@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AnalyticsKpiStrip } from "./_components/analytics-kpi-strip";
@@ -9,6 +11,15 @@ import { TrafficQuality } from "./_components/traffic-quality";
 
 // Import this stylesheet in any page or component that renders country flag classes.
 import "@/styles/flag-icons/flags.css";
+
+export const metadata: Metadata = {
+  title: "Open Source Analytics Dashboard with shadcn/ui",
+  description:
+    "Explore an open source analytics dashboard with traffic metrics, realtime visitors, page performance, and conversion insights.",
+  alternates: {
+    canonical: "/dashboard/analytics",
+  },
+};
 
 export default function Page() {
   return (
@@ -56,25 +67,25 @@ export default function Page() {
         </TabsContent>
 
         <TabsContent value="audience">
-          <div className="flex h-64 items-center justify-center rounded-xl border border-border border-dashed text-muted-foreground">
+          <div className="border-border text-muted-foreground flex h-64 items-center justify-center rounded-xl border border-dashed">
             Audience view coming soon.
           </div>
         </TabsContent>
 
         <TabsContent value="acquisition">
-          <div className="flex h-64 items-center justify-center rounded-xl border border-border border-dashed text-muted-foreground">
+          <div className="border-border text-muted-foreground flex h-64 items-center justify-center rounded-xl border border-dashed">
             Acquisition view coming soon.
           </div>
         </TabsContent>
 
         <TabsContent value="engagement">
-          <div className="flex h-64 items-center justify-center rounded-xl border border-border border-dashed text-muted-foreground">
+          <div className="border-border text-muted-foreground flex h-64 items-center justify-center rounded-xl border border-dashed">
             Engagement view coming soon.
           </div>
         </TabsContent>
 
         <TabsContent value="conversions">
-          <div className="flex h-64 items-center justify-center rounded-xl border border-border border-dashed text-muted-foreground">
+          <div className="border-border text-muted-foreground flex h-64 items-center justify-center rounded-xl border border-dashed">
             Conversions view coming soon.
           </div>
         </TabsContent>
