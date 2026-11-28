@@ -20,7 +20,7 @@ import { stockSummaryAction } from "@/server/actions/reports";
 import { PageCard, tableClass } from "../../../_components/wms/page-card";
 import { EmptyRow, LoadingRows } from "../../../_components/wms/table-states";
 
-type TypeFilter = "ALL" | "MATERIAL" | "PRODUCT";
+type TypeFilter = "ALL" | "MATERIAL" | "SEMI" | "PRODUCT";
 
 export function MovementReport() {
   const t = useT();
@@ -68,6 +68,7 @@ export function MovementReport() {
           <TabsList>
             <TabsTrigger value="ALL">{t("All")}</TabsTrigger>
             <TabsTrigger value="MATERIAL">{t("Raw material")}</TabsTrigger>
+            <TabsTrigger value="SEMI">{t("Semi-finished")}</TabsTrigger>
             <TabsTrigger value="PRODUCT">{t("Finished product")}</TabsTrigger>
           </TabsList>
         </Tabs>

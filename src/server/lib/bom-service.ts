@@ -51,7 +51,7 @@ export async function listBomsPage(f: BomPageFilter) {
 }
 
 /**
- * Prevents circular references: walks down the ACTIVE BOMs of semi-finished items.
+ * Prevents circular references: walks down the ACTIVE BOMs of non-material items.
  * Reaching outputItemId again means there is a cycle.
  */
 export async function assertNoCycle(
@@ -85,7 +85,6 @@ async function assertItemTypes(bom: InstanceType<typeof Bom>, session: ClientSes
   if (items.length !== bom.lines.length) throw new Error("BOM_LINE_ITEM_NOT_FOUND");
   for (const it of items) {
     if (!it.isActive) throw new Error(`BOM_ITEM_INACTIVE:${it.code}`);
-    if (it.type === ITEM_TYPE.PRODUCT) throw new Error(`BOM_LINE_CANNOT_BE_PRODUCT:${it.code}`);
   }
 }
 

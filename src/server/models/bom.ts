@@ -6,7 +6,7 @@ export type { BomStatus };
 export { BOM_STATUS };
 
 export interface IBomLine {
-  itemId: Types.ObjectId; // MATERIAL or SEMI
+  itemId: Types.ObjectId; // MATERIAL, SEMI, or PRODUCT
   itemCode: string; // snapshot
   itemName: string; // snapshot
   unit: string; // snapshot, always the item's base unit

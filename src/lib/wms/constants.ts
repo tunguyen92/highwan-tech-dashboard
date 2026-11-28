@@ -46,9 +46,8 @@ export const BOM_STATUS_LABEL: Record<BomStatus, string> = {
 
 export const VOUCHER_TYPE = {
   IMPORT_MATERIAL: "IMPORT_MATERIAL",
-  IMPORT_PRODUCT: "IMPORT_PRODUCT",
   IMPORT_OTHER: "IMPORT_OTHER",
-  EXPORT_PRODUCTION: "EXPORT_PRODUCTION",
+  PRODUCTION_RECEIPT: "PRODUCTION_RECEIPT",
   EXPORT_PRODUCT: "EXPORT_PRODUCT",
   EXPORT_PROCESSING: "EXPORT_PROCESSING",
   EXPORT_OTHER: "EXPORT_OTHER",
@@ -57,9 +56,8 @@ export type VoucherType = (typeof VOUCHER_TYPE)[keyof typeof VOUCHER_TYPE];
 
 export const VOUCHER_TYPE_LABEL: Record<VoucherType, string> = {
   IMPORT_MATERIAL: "Receive raw materials",
-  IMPORT_PRODUCT: "Receive finished products",
+  PRODUCTION_RECEIPT: "Receive from production",
   IMPORT_OTHER: "Other receipt",
-  EXPORT_PRODUCTION: "Issue to production",
   EXPORT_PRODUCT: "Ship to partner",
   EXPORT_PROCESSING: "Deliver for outsourcing",
   EXPORT_OTHER: "Other issue",
@@ -78,16 +76,29 @@ export const VOUCHER_STATUS_LABEL: Record<VoucherStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
-export const VOUCHER_RULES: Record<VoucherType, { direction: "IN" | "OUT"; allowed: ItemType[]; prefix: "PN" | "PX" }> =
-  {
-    IMPORT_MATERIAL: { direction: "IN", allowed: ["MATERIAL"], prefix: "PN" },
-    IMPORT_PRODUCT: { direction: "IN", allowed: ["PRODUCT"], prefix: "PN" },
-    IMPORT_OTHER: { direction: "IN", allowed: ["MATERIAL", "PRODUCT"], prefix: "PN" },
-    EXPORT_PRODUCTION: { direction: "OUT", allowed: ["MATERIAL"], prefix: "PX" },
-    EXPORT_PRODUCT: { direction: "OUT", allowed: ["PRODUCT"], prefix: "PX" },
-    EXPORT_PROCESSING: { direction: "OUT", allowed: ["MATERIAL", "PRODUCT"], prefix: "PX" },
-    EXPORT_OTHER: { direction: "OUT", allowed: ["MATERIAL", "PRODUCT"], prefix: "PX" },
-  };
+export const VOUCHER_RULES: Record<
+  VoucherType,
+  { direction: "IN" | "OUT"; allowed: ItemType[]; prefix: "PN" | "PX" | "SX" }
+> = {
+  IMPORT_MATERIAL: { direction: "IN", allowed: ["MATERIAL"], prefix: "PN" },
+  PRODUCTION_RECEIPT: {
+    direction: "IN",
+    allowed: ["SEMI", "PRODUCT"],
+    prefix: "SX",
+  },
+  IMPORT_OTHER: { direction: "IN", allowed: ["MATERIAL"], prefix: "PN" },
+  EXPORT_PRODUCT: { direction: "OUT", allowed: ["PRODUCT"], prefix: "PX" },
+  EXPORT_PROCESSING: {
+    direction: "OUT",
+    allowed: ["MATERIAL", "PRODUCT"],
+    prefix: "PX",
+  },
+  EXPORT_OTHER: {
+    direction: "OUT",
+    allowed: ["MATERIAL", "PRODUCT"],
+    prefix: "PX",
+  },
+};
 
 export const ROLE = {
   ADMIN: "ADMIN", // Everything, including user management

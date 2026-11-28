@@ -45,7 +45,9 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
   const t = useT();
   const canWrite = useCan("voucher:write");
   const isImport = direction === "IN";
-  const types = (Object.keys(VOUCHER_RULES) as VoucherType[]).filter((t) => VOUCHER_RULES[t].direction === direction);
+  const types = (Object.keys(VOUCHER_RULES) as VoucherType[]).filter(
+    (type) => VOUCHER_RULES[type].direction === direction,
+  );
 
   const [type, setType] = useState<"ALL" | VoucherType>("ALL");
   const [status, setStatus] = useState<"ALL" | VoucherStatus>("ALL");
@@ -80,10 +82,10 @@ export function VouchersScreen({ direction }: { direction: "IN" | "OUT" }) {
         description={
           isImport
             ? t(
-                "Receive raw materials from the partner and finished products from production. A voucher only posts to the stock ledger once confirmed.",
+                "Receive raw materials from partners and finished products from production. A voucher only posts to the stock ledger once confirmed.",
               )
             : t(
-                "Issue goods. Confirming a finished-product issue also deducts its active BOM materials. Issuing more than the stock is not allowed.",
+                "Issue goods. Stock is reduced for only the explicitly issued items because production receipts already consume their direct BOM. Issuing more than the stock is not allowed.",
               )
         }
         actions={

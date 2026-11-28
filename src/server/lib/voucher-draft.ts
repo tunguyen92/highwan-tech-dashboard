@@ -34,7 +34,6 @@ async function build(input: DraftInput) {
     const it = byId.get(String(l.itemId));
     if (!it) throw new Error(`ITEM_NOT_FOUND:${l.itemId}`);
     if (!it.isActive) throw new Error(`ITEM_INACTIVE:${it.code}`);
-    if (!it.isStocked) throw new Error(`ITEM_NOT_STOCKED:${it.code}`);
     if (rule.direction === "IN" && !rule.allowed.includes(it.type)) {
       throw new Error(`ITEM_TYPE_NOT_ALLOWED:${it.code}`);
     }
@@ -66,7 +65,7 @@ async function build(input: DraftInput) {
     type: input.type,
     direction: rule.direction,
     voucherDate: input.voucherDate,
-    documentNumber: input.documentNumber,
+    documentNumber: input.type === "PRODUCTION_RECEIPT" ? undefined : input.documentNumber,
     period: vnPeriod(input.voucherDate),
     batchNote: input.batchNote,
     note: input.note,

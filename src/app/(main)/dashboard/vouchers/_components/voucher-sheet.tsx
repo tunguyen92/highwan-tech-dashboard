@@ -85,7 +85,7 @@ export function VoucherSheet({
   const form = useForm<VoucherSheetFormValues>({
     resolver: zodResolver(voucherSheetSchema),
     defaultValues: {
-      type: direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCTION",
+      type: direction === "IN" ? "IMPORT_MATERIAL" : "EXPORT_PRODUCT",
       date: todayYmd(),
       documentNumber: "",
       note: "",

@@ -123,23 +123,21 @@ Ký hiệu: _Quyền_ là quyền tối thiểu cần có (bảng ở mục 7).
 | FR-VCH-04 | Xác nhận (một transaction, mục 6.1): “chiếm” phiếu từ nháp sang xác nhận một cách nguyên tử, kiểm tra lại từng dòng, cấp số phiếu, cập nhật tồn, ghi giao dịch kho. Lỗi ở bất kỳ bước nào thì hoàn tác toàn bộ và phiếu giữ nguyên là nháp | voucher:confirm |
 | FR-VCH-05 | Số phiếu PN-YYYY-00001 (nhập) và PX-YYYY-00001 (xuất); năm tính theo ngày chứng từ giờ Việt Nam; bộ đếm tăng nguyên tử; chỉ cấp khi xác nhận để không hổng số do phiếu nháp                                                                |                 |
 | FR-VCH-06 | Hủy phiếu đã xác nhận (một transaction, mục 6.2): bắt buộc lý do; ghi giao dịch đảo theo _ngày hủy_; phiếu chuyển CANCELLED                                                                                                                | voucher:cancel  |
-| FR-VCH-07 | Phiếu “Xuất sản xuất” lưu tham chiếu sản xuất (productionRef: thành phẩm, số lượng). Mã và tên thành phẩm do máy chủ tự tra, không tin dữ liệu từ client                                                                                   | voucher:write   |
-| FR-VCH-08 | Mỗi dòng có thể lưu normQuantity (định mức tại thời điểm điền). Sửa định mức về sau không làm đổi phiếu                                                                                                                                    | voucher:write   |
+| FR-VCH-07 | Phiếu “Nhập từ sản xuất” nhập thành phẩm hoặc bán thành phẩm vào kho và tiêu hao các thành phần trực tiếp theo BOM                                                                                                                           | voucher:write   |
+| FR-VCH-08 | Phiếu xuất giao đối tác và các phiếu xuất khác chỉ trừ đúng các mặt hàng trên phiếu, không tiêu hao BOM lần nữa                                                                                                                               | voucher:write   |
 | FR-VCH-09 | Liệt kê: lọc theo hướng, loại, trạng thái, kỳ, tiền tố số phiếu; sắp theo ngày giảm dần; phân trang (1–100/trang, mặc định giao diện 20)                                                                                                   | voucher:read    |
 | FR-VCH-10 | Trường “Mã đợt” (batchNote, tối đa 200 ký tự) tự do trên mọi phiếu                                                                                                                                                                         | voucher:write   |
 
 _Bảng 3.5.1: loại phiếu và loại mã hàng được phép_
 
-| Loại phiếu                       | Hướng | Mã hàng được phép | Tiền tố |
-| -------------------------------- | ----- | ----------------- | ------- |
-| IMPORT_MATERIAL Nhập nguyên liệu | Nhập  | MATERIAL          | PN      |
-| IMPORT_PRODUCT Nhập thành phẩm   | Nhập  | PRODUCT           | PN      |
-| IMPORT_OTHER Nhập khác           | Nhập  | MATERIAL, PRODUCT | PN      |
-| EXPORT_PRODUCTION Xuất sản xuất  | Xuất  | MATERIAL          | PX      |
-| EXPORT_PRODUCT Xuất giao đối tác | Xuất  | PRODUCT           | PX      |
-| EXPORT_OTHER Xuất khác           | Xuất  | MATERIAL, PRODUCT | PX      |
-
-SEMI không bao giờ được phép trên phiếu (ITEM_NOT_STOCKED).
+| Loại phiếu                         | Hướng | Mã hàng được phép          | Tiền tố      |
+| ---------------------------------- | ----- | -------------------------- | ------------ |
+| IMPORT_MATERIAL Nhập nguyên liệu   | Nhập  | MATERIAL                   | PN-năm-seq   |
+| IMPORT_OTHER Nhập khác             | Nhập  | MATERIAL                   | PN-năm-seq   |
+| PRODUCTION_RECEIPT Nhập từ sản xuất | Nhập  | SEMI, PRODUCT              | SXYYYYMMDDhhmmss UTC |
+| EXPORT_PRODUCT Xuất giao đối tác   | Xuất  | PRODUCT                    | PX-năm-seq   |
+| EXPORT_PROCESSING Giao gia công    | Xuất  | MATERIAL, PRODUCT          | PX-năm-seq   |
+| EXPORT_OTHER Xuất khác             | Xuất  | MATERIAL, PRODUCT          | PX-năm-seq   |
 
 ### 3.6 Tồn kho và sổ kho (STK)
 
@@ -229,7 +227,7 @@ Chỉ mục: (outputItemId, version) duy nhất; **duy nhất 1 ACTIVE mỗi mã
 | type, direction, status                                 | enum          | direction suy ra từ type                                                 |
 | voucherDate, period                                     | Date, YYYY-MM | period suy ra theo giờ Việt Nam                                          |
 | batchNote, note                                         | string?       |                                                                          |
-| productionRef                                           | object?       | Chỉ cho EXPORT_PRODUCTION                                                |
+| productionRef                                           | object?       | Chỉ cho PRODUCTION_RECEIPT                                               |
 | lines[]                                                 |               | lineNo, itemId, itemCode, itemName, unit, quantity, normQuantity?, note? |
 | createdBy, confirmedBy/At, cancelledBy/At, cancelReason |               |                                                                          |
 
@@ -318,9 +316,9 @@ Ví dụ: SA1 = 2×R1 + 0,5×W1 (hao hụt 10%); FG1 = 1×SA1 + 3×R1. Với 100
 
 Đầu vào: kỳ YYYY-MM, dung sai chung (mặc định 2%), cờ chỉ dòng bất thường.
 
-1.  produced[p] = tổng signedQuantity của giao dịch IMPORT_PRODUCT trong kỳ cho từng thành phẩm (đã gồm giao dịch đảo).
+1.  produced[p] = tổng signedQuantity dòng sản phẩm trên giao dịch PRODUCTION_RECEIPT trong kỳ cho từng thành phẩm (đã gồm giao dịch đảo).
 2.  Với mỗi thành phẩm có produced > 0: khai triển định mức ACTIVE hiện tại; cộng dồn norm và allowed theo nguyên liệu. Thành phẩm chưa có định mức ACTIVE bị _bỏ qua và liệt kê_ riêng (skipped), không làm hỏng báo cáo.
-3.  actual[m] = tổng của −signedQuantity các giao dịch EXPORT_PRODUCTION trong kỳ.
+3.  actual[m] = tổng của −signedQuantity các giao dịch PRODUCTION_RECEIPT trong kỳ.
 4.  Bỏ các mã có excludeFromReconciliation.
 5.  Với mỗi nguyên liệu: diff = actual − norm; diffPercent = diff / norm × 100 (rỗng nếu norm = 0). Trạng thái, theo thứ tự ưu tiên:
 

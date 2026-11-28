@@ -320,7 +320,7 @@ export function BomEditor({ bomId }: { bomId: string }) {
       <PasteLinesDialog
         open={pasteOpen}
         onOpenChange={setPasteOpen}
-        items={items.filter((item) => item.type !== "PRODUCT" && item._id !== bom.outputItemId)}
+        items={items.filter((item) => item._id !== bom.outputItemId)}
         onApply={addPasted}
       />
 

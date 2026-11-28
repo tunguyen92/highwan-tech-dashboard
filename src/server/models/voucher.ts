@@ -105,7 +105,7 @@ VoucherSchema.pre("validate", function () {
   for (const [i, line] of this.lines.entries()) line.lineNo = i + 1;
   const ids = this.lines.map((l) => String(l.itemId));
   if (new Set(ids).size !== ids.length) throw new Error("VOUCHER_DUPLICATE_ITEM");
-  if (this.type !== VOUCHER_TYPE.EXPORT_PRODUCTION) this.productionRef = undefined;
+  if (this.type !== VOUCHER_TYPE.PRODUCTION_RECEIPT) this.productionRef = undefined;
   if (this.status === VOUCHER_STATUS.CANCELLED && !this.cancelReason) throw new Error("CANCEL_REASON_REQUIRED");
 });
 

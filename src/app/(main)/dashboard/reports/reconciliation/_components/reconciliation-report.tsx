@@ -54,9 +54,7 @@ export function ReconciliationReport() {
   return (
     <PageCard
       title={t("Monthly BOM reconciliation")}
-      description={t(
-        "Compares the materials actually issued to production with the requirement calculated from finished products received in the month, using the active BOMs.",
-      )}
+      description={t("Compares direct BOM consumption with products received from production, using the active BOMs.")}
       actions={
         <Button
           variant="outline"
@@ -170,12 +168,12 @@ export function ReconciliationReport() {
       <ul className="text-muted-foreground list-disc space-y-1 px-8 text-xs">
         <li>
           {t(
-            "Requirement = (finished products received in the month, net of cancellations) * active BOM, expanded across all levels.",
+            "Requirement = (products received from production in the month, net of cancellations) * their direct active BOM.",
           )}
         </li>
         <li>
           {t(
-            'Only "Issue to production" and "Receive finished products" vouchers count. Items marked "Not reconciled" are ignored.',
+            'Production receipts consume their direct BOM components. Sales and other issue vouchers do not consume BOM components again. Items marked "Not reconciled" are ignored.',
           )}
         </li>
         <li>

@@ -12,7 +12,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -86,7 +85,7 @@ export function ItemsScreen() {
       <PageCard
         title={t("Item catalog")}
         description={t(
-          "Raw materials, semi-finished and finished products. Semi-finished items are only used in BOMs and are not stocked.",
+          "Raw materials, semi-finished and finished products. Semi-finished items can be stocked and used in BOMs.",
         )}
         actions={
           <>
@@ -197,11 +196,9 @@ export function ItemsScreen() {
                           {canWrite ? (
                             <DropdownMenuItem onClick={() => setForm({ item })}>{t("Edit")}</DropdownMenuItem>
                           ) : null}
-                          {item.type !== "PRODUCT" ? (
-                            <DropdownMenuItem onClick={() => setWhereUsed(item)}>
-                              {t("Used in which BOMs")}
-                            </DropdownMenuItem>
-                          ) : null}
+                          <DropdownMenuItem onClick={() => setWhereUsed(item)}>
+                            {t("Used in which BOMs")}
+                          </DropdownMenuItem>
                           {canWrite ? (
                             <>
                               <DropdownMenuSeparator />
@@ -209,9 +206,6 @@ export function ItemsScreen() {
                                 {item.isActive ? t("Deactivate") : t("Reactivate")}
                               </DropdownMenuItem>
                             </>
-                          ) : null}
-                          {!canWrite && item.type === "PRODUCT" ? (
-                            <DropdownMenuLabel>{t("No actions available")}</DropdownMenuLabel>
                           ) : null}
                         </DropdownMenuGroup>
                       </DropdownMenuContent>

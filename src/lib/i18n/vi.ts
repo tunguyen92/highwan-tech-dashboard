@@ -160,8 +160,8 @@ export const vi: Record<string, string> = {
   "Code, type and unit are locked once the item has vouchers, stock transactions or a BOM.":
     "Mã, loại và đơn vị sẽ bị khóa khi mã hàng đã có phiếu, giao dịch kho hoặc định mức.",
   "Minimum stock": "Tồn tối thiểu",
-  "Semi-finished items are not stocked: they only serve as an intermediate level in a BOM.":
-    "Bán thành phẩm không lưu kho: chỉ dùng làm cấp trung gian trong định mức.",
+  "Semi-finished items are stocked and can also be used as components in another product's BOM.":
+    "Bán thành phẩm được lưu kho và có thể dùng làm thành phần trong định mức của sản phẩm khác.",
   "Only M and KG units accept fractional quantities; all other units must be whole numbers.":
     "Chỉ đơn vị M và KG được nhập số lẻ; các đơn vị khác phải là số nguyên.",
   Group: "Nhóm",
@@ -171,8 +171,8 @@ export const vi: Record<string, string> = {
   "Exclude from BOM reconciliation (glue, solder, small consumables)":
     "Không đưa vào đối chiếu định mức (keo, thiếc hàn, vật tư tiêu hao nhỏ)",
   "Item catalog": "Danh mục mã hàng",
-  "Raw materials, semi-finished and finished products. Semi-finished items are only used in BOMs and are not stocked.":
-    "Nguyên liệu, bán thành phẩm và thành phẩm. Bán thành phẩm chỉ dùng trong định mức, không lưu kho.",
+  "Raw materials, semi-finished and finished products. Semi-finished items can be stocked and used in BOMs.":
+    "Nguyên liệu, bán thành phẩm và thành phẩm. Bán thành phẩm có thể lưu kho và dùng trong định mức.",
   "Raw material": "Nguyên liệu",
   "Semi-finished": "Bán thành phẩm",
   "Finished product": "Thành phẩm",
@@ -219,8 +219,8 @@ export const vi: Record<string, string> = {
   "Cancelled vouchers are recorded with a reversal dated on the day of cancellation: cancelling an issue shows in the In column of that period, cancelling a receipt shows in the Out column. Closed periods therefore never change.":
     "Phiếu bị hủy được ghi bằng giao dịch đảo theo ngày hủy: hủy phiếu xuất sẽ hiện ở cột Nhập của kỳ hủy, hủy phiếu nhập hiện ở cột Xuất. Số liệu các kỳ đã chốt vì vậy không bị thay đổi.",
   "Monthly BOM reconciliation": "Đối chiếu định mức theo tháng",
-  "Compares the materials actually issued to production with the requirement calculated from finished products received in the month, using the active BOMs.":
-    "So sánh nguyên liệu thực xuất cho sản xuất với nhu cầu tính từ thành phẩm đã nhập kho trong tháng, theo định mức đang áp dụng.",
+  "Compares direct BOM consumption with products received from production, using the active BOMs.":
+    "So sánh tiêu hao BOM trực tiếp với hàng nhập từ sản xuất trong tháng, theo định mức đang áp dụng.",
   "Max allowed": "Tối đa cho phép",
   "Actually issued": "Thực xuất",
   Difference: "Chênh lệch",
@@ -232,10 +232,10 @@ export const vi: Record<string, string> = {
   'because they have no active BOM. Materials of these products appear as "No BOM" if they were issued.':
     'vì chưa có định mức đang áp dụng. Nguyên liệu của các thành phần này sẽ hiện là "Không có định mức" nếu đã xuất.',
   "No data for this month.": "Không có số liệu trong tháng này.",
-  "Requirement = (finished products received in the month, net of cancellations) * active BOM, expanded across all levels.":
-    "Nhu cầu = (thành phần nhập trong tháng, đã trừ phần hủy) * định mức đang áp dụng, khai triển mọi cấp.",
-  'Only "Issue to production" and "Receive finished products" vouchers count. Items marked "Not reconciled" are ignored.':
-    'Chỉ tính phiếu "Xuất sản xuất" và "Nhập thành phẩm". Mã đánh dấu "Không đối chiếu" bị bỏ qua.',
+  "Requirement = (products received from production in the month, net of cancellations) * their direct active BOM.":
+    "Nhu cầu = (hàng nhập từ sản xuất trong tháng, đã trừ phần hủy) * BOM trực tiếp đang áp dụng.",
+  'Production receipts consume their direct BOM components. Sales and other issue vouchers do not consume BOM components again. Items marked "Not reconciled" are ignored.':
+    'Phiếu nhập từ sản xuất tiêu hao thành phần BOM trực tiếp. Phiếu bán hàng và các phiếu xuất khác không trừ BOM lần nữa. Mã đánh dấu "Không đối chiếu" bị bỏ qua.',
   "Work in progress on the line at month end (materials issued but finished products not yet received) skews the figures temporarily and is made up the following month.":
     "Hàng dở dang trên chuyền cuối tháng (đã xuất nguyên liệu nhưng chưa nhập thành phẩm) làm lệch số liệu tạm thời và được bù lại ở tháng sau.",
   "If a BOM is changed mid-month, that month's figures are only approximate because the currently active version is used.":
@@ -262,8 +262,8 @@ export const vi: Record<string, string> = {
   "Current stock": "Tồn hiện tại",
   "Previous month stock": "Tồn tháng trước",
   Inventory: "Tồn kho",
-  "Current stock of raw materials and finished products, with alerts below the minimum level.":
-    "Tồn kho hiện tại của nguyên liệu và thành phẩm. Cảnh báo khi dưới mức tối thiểu.",
+  "Current stock of raw materials, semi-finished items and finished products, with alerts below the minimum level.":
+    "Tồn kho hiện tại của nguyên liệu, bán thành phẩm và thành phẩm. Cảnh báo khi dưới mức tối thiểu.",
   "Only items below minimum": "Chỉ hiện mã dưới mức tối thiểu",
   "item(s) below the minimum stock level.": "mã hàng đang dưới mức tồn tối thiểu.",
   Minimum: "Tối thiểu",
@@ -331,8 +331,8 @@ export const vi: Record<string, string> = {
   "Save draft": "Lưu nháp",
   Confirm: "Xác nhận",
   "Confirm the voucher and post to the stock ledger?": "Xác nhận phiếu và ghi sổ kho?",
-  "Stock is deducted immediately and issuing more than the stock is not allowed. Finished-product issues also deduct materials from the active BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
-    "Hệ thống trừ tồn kho ngay và không cho xuất vượt tồn. Phiếu xuất thành phẩm cũng trừ nguyên liệu theo BOM đang áp dụng. Sau khi xác nhận không sửa được; nếu sai chỉ có thể hủy phiếu.",
+  "Stock is deducted only for the issued items and issuing more than the stock is not allowed. Production receipts already consume their direct BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
+    "Hệ thống chỉ trừ các mặt hàng ghi trên phiếu và không cho xuất vượt tồn. Phiếu nhập từ sản xuất đã trừ BOM trực tiếp. Sau khi xác nhận không sửa được; nếu sai chỉ có thể hủy phiếu.",
   "Stock is increased immediately. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
     "Hệ thống tăng tồn kho ngay. Sau khi xác nhận không sửa được; nếu sai chỉ có thể hủy phiếu.",
   Replace: "Thay thế",
@@ -341,10 +341,10 @@ export const vi: Record<string, string> = {
   "Cancel the confirmed voucher?": "Hủy phiếu đã xác nhận?",
   "The system writes reversal transactions to restore stock and keeps the history. Cancelling a receipt is blocked if the goods were already issued.":
     "Hệ thống ghi giao dịch đảo để hoàn tồn kho, lịch sử vẫn được giữ. Hủy phiếu nhập sẽ bị chặn nếu hàng đã được xuất đi.",
-  "Receive raw materials from the partner and finished products from production. A voucher only posts to the stock ledger once confirmed.":
+  "Receive raw materials from partners and finished products from production. A voucher only posts to the stock ledger once confirmed.":
     "Nhập nguyên liệu từ đối tác và nhập thành phẩm từ sản xuất. Phiếu chỉ ghi sổ kho khi được xác nhận.",
-  "Issue goods. Confirming a finished-product issue also deducts its active BOM materials. Issuing more than the stock is not allowed.":
-    "Lập phiếu xuất hàng. Khi xác nhận phiếu xuất thành phẩm, hệ thống cũng trừ nguyên liệu theo BOM đang áp dụng. Không cho xuất vượt tồn kho.",
+  "Issue goods. Stock is reduced for only the explicitly issued items because production receipts already consume their direct BOM. Issuing more than the stock is not allowed.":
+    "Lập phiếu xuất hàng. Hệ thống chỉ trừ mặt hàng xuất vì phiếu nhập từ sản xuất đã tiêu hao BOM trực tiếp. Không cho xuất vượt tồn kho.",
   "Search by voucher number...": "Tìm theo số phiếu...",
   "Create voucher": "Tạo phiếu",
   "No vouchers yet.": "Chưa có phiếu nào.",
@@ -396,9 +396,8 @@ export const vi: Record<string, string> = {
   "In use": "Đang áp dụng",
   Superseded: "Đã thay thế",
   "Receive raw materials": "Nhập nguyên liệu",
-  "Receive finished products": "Nhập thành phẩm",
+  "Receive from production": "Nhập từ sản xuất",
   "Other receipt": "Nhập khác",
-  "Issue to production": "Xuất sản xuất",
   "Ship to partner": "Xuất giao đối tác",
   "Deliver for outsourcing": "Giao hàng gia công",
   "Other issue": "Xuất khác",

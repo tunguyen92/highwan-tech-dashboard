@@ -25,7 +25,7 @@ import { successBadgeClassName } from "../../_components/wms/status-badges";
 import { EmptyRow, LoadingRows } from "../../_components/wms/table-states";
 import { StockCardSheet } from "./stock-card-sheet";
 
-type TypeFilter = "ALL" | "MATERIAL" | "PRODUCT";
+type TypeFilter = "ALL" | "MATERIAL" | "SEMI" | "PRODUCT";
 type StockListResult = {
   rows: StockRow[];
   total: number;
@@ -87,7 +87,9 @@ export function StockScreen() {
     <>
       <PageCard
         title={t("Inventory")}
-        description={t("Current stock of raw materials and finished products, with alerts below the minimum level.")}
+        description={t(
+          "Current stock of raw materials, semi-finished items and finished products, with alerts below the minimum level.",
+        )}
         actions={
           <>
             <InputGroup className="h-7 w-full md:w-64">
@@ -121,6 +123,7 @@ export function StockScreen() {
             <TabsList className="gap-2">
               <TabsTrigger value="ALL">{t("All")}</TabsTrigger>
               <TabsTrigger value="MATERIAL">{t("Raw material")}</TabsTrigger>
+              <TabsTrigger value="SEMI">{t("Semi-finished")}</TabsTrigger>
               <TabsTrigger value="PRODUCT">{t("Finished product")}</TabsTrigger>
             </TabsList>
           </Tabs>

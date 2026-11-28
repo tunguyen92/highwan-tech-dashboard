@@ -6,9 +6,9 @@ import { Counter } from "@/server/models/counter";
 import { Inventory } from "@/server/models/inventory";
 import { Item } from "@/server/models/item";
 import { type IStockTransaction, StockTransaction } from "@/server/models/stock-transaction";
-import { VOUCHER_RULES, VOUCHER_STATUS, Voucher } from "@/server/models/voucher";
+import { type IVoucher, VOUCHER_RULES, VOUCHER_STATUS, Voucher } from "@/server/models/voucher";
 
-import { explodeBom } from "./bom-explode";
+import { explodeBom, type Need } from "./bom-explode";
 import { D, decimalsOf, isPositive, negate, vnPeriod, vnYear } from "./decimal";
 
 /**
@@ -51,16 +51,22 @@ async function nextVoucherNo(session: ClientSession, prefix: string, date: Date)
   return `${prefix}-${year}-${String(c?.seq).padStart(5, "0")}`;
 }
 
+export function productionVoucherNo(date: Date) {
+  const iso = date.toISOString();
+  return `SX${iso.slice(0, 4)}${iso.slice(5, 7)}${iso.slice(8, 10)}${iso.slice(11, 13)}${iso.slice(14, 16)}${iso.slice(17, 19)}`;
+}
+
 /** Confirms a voucher: posts to the stock ledger in a single transaction */
 export async function confirmVoucher(voucherId: string, userId: string) {
   const session = await mongoose.startSession();
   try {
-    let result: any;
+    let result: IVoucher | undefined;
     await session.withTransaction(async () => {
       // Atomically "claim" the voucher: confirming twice still succeeds only once
+      const confirmedAt = new Date();
       const v = await Voucher.findOneAndUpdate(
         { _id: voucherId, status: VOUCHER_STATUS.DRAFT },
-        { $set: { status: VOUCHER_STATUS.CONFIRMED, confirmedBy: userId, confirmedAt: new Date() } },
+        { $set: { status: VOUCHER_STATUS.CONFIRMED, confirmedBy: userId, confirmedAt } },
         { returnDocument: "after", session },
       );
       if (!v) throw new Error("VOUCHER_NOT_DRAFT");
@@ -75,7 +81,6 @@ export async function confirmVoucher(voucherId: string, userId: string) {
         const it = byId.get(String(l.itemId));
         if (!it) throw new Error(`ITEM_NOT_FOUND:${l.itemCode}`);
         if (!it.isActive) throw new Error(`ITEM_INACTIVE:${it.code}`);
-        if (!it.isStocked) throw new Error(`ITEM_NOT_STOCKED:${it.code}`);
         if (rule.direction === "IN" && !rule.allowed.includes(it.type)) {
           throw new Error(`ITEM_TYPE_NOT_ALLOWED:${it.code}`);
         }
@@ -91,30 +96,36 @@ export async function confirmVoucher(voucherId: string, userId: string) {
         }
       }
 
-      const bomConsumption = new Map<string, Decimal>();
-      if (rule.direction === "OUT") {
+      const bomCandidates: Map<string, Need>[] = [];
+      if (v.type === "PRODUCTION_RECEIPT") {
         for (const line of v.lines) {
           const item = byId.get(String(line.itemId));
-          if (item?.type !== ITEM_TYPE.PRODUCT) continue;
-
-          const needs = await explodeBom(item._id, line.quantity.toString(), { session });
-          for (const [itemId, need] of needs) {
-            bomConsumption.set(itemId, (bomConsumption.get(itemId) ?? new Decimal(0)).plus(need.norm));
-          }
+          if (!item || item.type === ITEM_TYPE.MATERIAL) continue;
+          bomCandidates.push(
+            await explodeBom(item._id, line.quantity.toString(), {
+              directOnly: true,
+              includeIntermediate: true,
+              session,
+            }),
+          );
         }
       }
 
-      const componentItems = await Item.find({ _id: { $in: [...bomConsumption.keys()] } }).session(session);
+      const componentIds = [...new Set(bomCandidates.flatMap((needs) => [...needs.keys()]))];
+      const componentItems = await Item.find({ _id: { $in: componentIds } }).session(session);
       const componentById = new Map(componentItems.map((item) => [String(item._id), item]));
+      const bomConsumption = new Map<string, Decimal>();
+      for (const needs of bomCandidates) {
+        for (const [itemId, need] of needs) {
+          bomConsumption.set(itemId, (bomConsumption.get(itemId) ?? new Decimal(0)).plus(need.norm));
+        }
+      }
       const bomLines = [...bomConsumption.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([itemId, quantity], index) => {
           const item = componentById.get(itemId);
           if (!item) throw new Error(`ITEM_NOT_FOUND:${itemId}`);
           if (!item.isActive) throw new Error(`ITEM_INACTIVE:${item.code}`);
-          if (!item.isStocked) throw new Error(`ITEM_NOT_STOCKED:${item.code}`);
-          if (item.type !== ITEM_TYPE.MATERIAL) throw new Error(`ITEM_TYPE_NOT_ALLOWED:${item.code}`);
-
           const roundedQuantity = D(
             quantity.toDecimalPlaces(maxQuantityDecimalPlacesForUnit(item.unit), Decimal.ROUND_UP).toString(),
           );
@@ -130,7 +141,12 @@ export async function confirmVoucher(voucherId: string, userId: string) {
           };
         });
 
-      v.voucherNo = await nextVoucherNo(session, rule.prefix, v.voucherDate);
+      v.voucherNo =
+        v.type === "PRODUCTION_RECEIPT"
+          ? productionVoucherNo(confirmedAt)
+          : await nextVoucherNo(session, rule.prefix, v.voucherDate);
+      const voucherNo = v.voucherNo;
+      if (!voucherNo) throw new Error("VOUCHER_NUMBER_MISSING");
       await v.save({ session });
 
       // Process in itemId order so concurrent vouchers touch items in the same order (fewer write conflicts)
@@ -140,15 +156,16 @@ export async function confirmVoucher(voucherId: string, userId: string) {
           itemId: line.itemId,
           itemCode: line.itemCode,
           quantity: line.quantity,
+          direction: rule.direction,
         })),
-        ...bomLines,
+        ...bomLines.map((line) => ({ ...line, direction: "OUT" as const })),
       ].sort((a, b) => String(a.itemId).localeCompare(String(b.itemId)) || a.lineNo - b.lineNo);
       const txs: Partial<IStockTransaction>[] = [];
       for (const l of movements) {
         const balance = await applyMovement(
           session,
           l.itemId,
-          rule.direction,
+          l.direction,
           l.quantity,
           "INSUFFICIENT_STOCK",
           l.itemCode,
@@ -156,14 +173,14 @@ export async function confirmVoucher(voucherId: string, userId: string) {
         txs.push({
           kind: "POST",
           voucherId: v._id,
-          voucherNo: v.voucherNo!,
+          voucherNo,
           voucherType: v.type,
           lineNo: l.lineNo,
           itemId: l.itemId,
           itemCode: l.itemCode,
-          direction: rule.direction,
+          direction: l.direction,
           quantity: l.quantity,
-          signedQuantity: rule.direction === "IN" ? l.quantity : negate(l.quantity),
+          signedQuantity: l.direction === "IN" ? l.quantity : negate(l.quantity),
           balanceAfter: balance,
           businessDate: v.voucherDate,
           period: v.period,
@@ -173,6 +190,7 @@ export async function confirmVoucher(voucherId: string, userId: string) {
       await StockTransaction.insertMany(txs, { session, ordered: true });
       result = v.toObject();
     });
+    if (!result) throw new Error("VOUCHER_CONFIRMATION_FAILED");
     return result;
   } finally {
     await session.endSession();
@@ -186,7 +204,7 @@ export async function confirmVoucher(voucherId: string, userId: string) {
  * - Reversals are dated on the CANCELLATION date (already-reported past periods are not altered).
  */
 export async function cancelVoucher(voucherId: string, userId: string, reason: string) {
-  if (!reason?.trim()) throw new Error("CANCEL_REASON_REQUIRED");
+  if (!reason.trim()) throw new Error("CANCEL_REASON_REQUIRED");
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {

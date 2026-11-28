@@ -129,7 +129,7 @@ export const bomPageFilterSchema = bomFilterSchema.extend({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-export const stockSummarySchema = z.object({ from: ymd, to: ymd, type: z.enum(["MATERIAL", "PRODUCT"]).optional() });
+export const stockSummarySchema = z.object({ from: ymd, to: ymd, type: enumOf(ITEM_TYPE).optional() });
 export const saleAmountSchema = z
   .object({
     from: z.iso.date(),
@@ -143,7 +143,7 @@ export const reconciliationSchema = z.object({
   onlyAbnormal: z.boolean().default(false),
 });
 export const currentStockSchema = z.object({
-  type: z.enum(["MATERIAL", "PRODUCT"]).optional(),
+  type: enumOf(ITEM_TYPE).optional(),
   lowOnly: z.boolean().default(false),
   q: z.string().trim().max(100).optional(),
 });

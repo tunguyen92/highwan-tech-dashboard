@@ -128,17 +128,16 @@ Phiếu nhập/xuất tạo và sửa trong _ngăn kéo rộng_ (không sang tra
 3. _Lưu nháp_ (tùy chọn) hoặc _Xác nhận_.
 4. Hệ thống cấp số PN-YYYY-00001, cộng tồn, ghi giao dịch kho.
 
-### 6.2 Xuất cho sản xuất theo định mức
+### 6.2 Nhập thành phẩm từ sản xuất
 
-1. _Phiếu xuất → Tạo phiếu_, loại “Xuất sản xuất”.
-2. Ở khung “Điền theo định mức”: chọn thành phẩm, nhập số lượng, bấm nút.
-3. Hệ thống khai triển định mức đa cấp, gộp nguyên liệu trùng, điền các dòng (làm tròn lên theo số lẻ của mã) và lưu sẵn cột _Định mức_.
-4. Thủ kho chỉnh số thực xuất nếu khác. Dòng vượt định mức được đánh dấu cảnh báo (không chặn).
-5. _Xác nhận._ Nếu thiếu hàng, hệ thống báo mã nào thiếu và không ghi gì.
+1. Chọn loại “Nhập từ sản xuất”, nhập thành phẩm hoặc bán thành phẩm và số lượng hoàn thành.
+2. Hệ thống tự sinh số phiếu `SXYYYYMMDDhhmmss` theo thời gian UTC.
+3. Xác nhận phiếu sẽ cộng thành phẩm vào kho và trừ đúng một cấp thành phần trực tiếp trong BOM.
+4. Nếu thành phần là sản phẩm trung gian, chỉ trừ tồn thành phẩm trung gian; không khai triển BOM của nó lần nữa.
 
-### 6.3 Nhập thành phẩm và xuất giao đối tác
+### 6.3 Xuất giao đối tác
 
-Tương tự 6.1 với loại “Nhập thành phẩm” (khi sản xuất xong) và “Xuất giao đối tác” (khi giao hàng, không cho vượt tồn).
+Chọn “Xuất giao đối tác”, nhập thành phẩm cần giao. Hệ thống chỉ trừ thành phẩm trên phiếu, không trừ BOM lần nữa vì BOM đã được tiêu hao lúc nhập sản xuất.
 
 ### 6.4 Hủy phiếu
 

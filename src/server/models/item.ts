@@ -15,7 +15,7 @@ export interface IItem {
   type: ItemType;
   unit: string; // The Only base unit, used by BOM, vouchers and inventory
   minStock: Types.Decimal128; // Minimum stock level (low-stock alert)
-  isStocked: boolean; // Derived from type, never set manually
+  isStocked: boolean; // Derived, never set manually
   excludeFromReconciliation: boolean; // Glue, solder, etc.: excluded from norm reconciliation
   packSize?: string; // Reference only (e.g. "box of 20 pieces"), not used in calculations
   note?: string;
@@ -43,9 +43,8 @@ const ItemSchema = new Schema<IItem>(
   { timestamps: true },
 );
 
-// isStocked is always derived from type: SEMI is never stocked
 ItemSchema.pre("validate", function () {
-  this.isStocked = this.type !== ITEM_TYPE.SEMI;
+  this.isStocked = true;
 });
 
 // Once stock transactions exist, unit / type must not change (enforce in the service layer)

@@ -1,16 +1,17 @@
 import Decimal from "decimal.js";
 import { type PipelineStage, Types } from "mongoose";
 
-import { ITEM_TYPE, VOUCHER_RULES } from "@/lib/wms/constants";
+import { ITEM_TYPE, type ItemType } from "@/lib/wms/constants";
 import { Item } from "@/server/models/item";
 import { StockTransaction } from "@/server/models/stock-transaction";
+import { Voucher } from "@/server/models/voucher";
 
 import { explodeBom } from "./bom-explode";
 import { vnPeriod } from "./decimal";
 
 const dec = (v: any) => new Decimal(v ? v.toString() : 0);
 
-type CurrentStockFilter = { type?: "MATERIAL" | "PRODUCT"; lowOnly: boolean; q?: string };
+type CurrentStockFilter = { type?: ItemType; lowOnly: boolean; q?: string };
 type CurrentStockAggregateRow = {
   _id: Types.ObjectId;
   code: string;
@@ -18,7 +19,7 @@ type CurrentStockAggregateRow = {
   spec?: string;
   productionLine?: string;
   unit: string;
-  type: "MATERIAL" | "PRODUCT";
+  type: ItemType;
   onHand: Types.Decimal128;
   previousMonthOnHand: Types.Decimal128;
   minStock: Types.Decimal128;
@@ -31,7 +32,7 @@ type CurrentStockPageAggregation = {
 };
 
 function currentStockBaseStages(f: CurrentStockFilter): PipelineStage[] {
-  const match: Record<string, unknown> = { isActive: true, isStocked: true };
+  const match: Record<string, unknown> = { isActive: true };
   if (f.type) match.type = f.type;
   if (f.q) {
     const re = new RegExp(f.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
@@ -93,7 +94,7 @@ export const vnDayStart = (ymd: string) => new Date(`${ymd}T00:00:00+07:00`);
  * Stock Summary (opening / in / out / closing) for [from, to)
  * Reversals (voucher cancellations) count in the period of cancellation: cancelling an export voucher shows up in the In column of that period.
  */
-export async function getStockSummary(from: Date, to: Date, type?: "MATERIAL" | "PRODUCT") {
+export async function getStockSummary(from: Date, to: Date, type?: ItemType) {
   const zero = { $toDecimal: 0 };
   const rows = await StockTransaction.aggregate([
     { $match: { businessDate: { $lt: to } } },
@@ -150,43 +151,60 @@ export type ReconStatus = "OVER" | "NO_NORM" | "UNDER" | "OK";
 
 /**
  * Monthly norm reconciliation ("YYYY-MM", Vietnam time):
- * - Finished products issued in the month x current ACTIVE BOM => theoretical requirement
- * - Compared with materials actually issued or automatically consumed from BOMs, net of cancellations
+ * - Products received from production in the month x their direct ACTIVE BOM => theoretical requirement
+ * - Compared with all actual component and material issues, net of cancellations
  * * Items with excludeFromReconciliation are skipped.
  */
 export async function getMonthlyReconciliation(period: string, defaultTolerancePercent = 2, onlyAbnormal = false) {
-  const [finishedProducts, materials] = await Promise.all([
-    Item.find({ type: ITEM_TYPE.PRODUCT }, "_id").lean(),
-    Item.find({ type: ITEM_TYPE.MATERIAL }, "_id").lean(),
+  const [outputs, components] = await Promise.all([
+    Item.find({ type: { $ne: ITEM_TYPE.MATERIAL } }, "_id").lean(),
+    Item.find({}, "_id").lean(),
   ]);
-  const outboundTypes = Object.entries(VOUCHER_RULES)
-    .filter(([, rule]) => rule.direction === "OUT")
-    .map(([type]) => type);
   const [produced, issued] = await Promise.all([
     StockTransaction.aggregate([
       {
         $match: {
           period,
-          voucherType: { $in: outboundTypes },
-          itemId: { $in: finishedProducts.map((item) => item._id) },
+          voucherType: "PRODUCTION_RECEIPT",
+          itemId: { $in: outputs.map((item) => item._id) },
         },
       },
-      { $group: { _id: "$itemId", qty: { $sum: { $multiply: ["$signedQuantity", -1] } } } },
+      {
+        $lookup: {
+          from: Voucher.collection.name,
+          localField: "voucherId",
+          foreignField: "_id",
+          as: "voucher",
+        },
+      },
+      { $unwind: "$voucher" },
+      { $match: { $expr: { $lte: ["$lineNo", { $size: "$voucher.lines" }] } } },
+      { $group: { _id: "$itemId", qty: { $sum: "$signedQuantity" } } },
     ]),
     StockTransaction.aggregate([
       {
         $match: {
           period,
-          voucherType: { $in: outboundTypes },
-          itemId: { $in: materials.map((item) => item._id) },
+          voucherType: "PRODUCTION_RECEIPT",
+          itemId: { $in: components.map((item) => item._id) },
         },
       },
+      {
+        $lookup: {
+          from: Voucher.collection.name,
+          localField: "voucherId",
+          foreignField: "_id",
+          as: "voucher",
+        },
+      },
+      { $unwind: "$voucher" },
+      { $match: { $expr: { $gt: ["$lineNo", { $size: "$voucher.lines" }] } } },
       { $group: { _id: "$itemId", qty: { $sum: { $multiply: ["$signedQuantity", -1] } } } },
     ]),
   ]);
 
-  // Theoretical requirement, merged across all finished products.
-  // A product without an ACTIVE BOM (or with a semi-finished level lacking one) cannot be expanded: it is skipped
+  // Theoretical direct component requirement, merged across all production outputs.
+  // A product without an ACTIVE BOM cannot be expanded: it is skipped
   // and reported, so one missing BOM does not break the whole report.
   const need = new Map<string, { norm: Decimal; allowed: Decimal }>();
   const skippedProducts: { id: string; quantity: string }[] = [];
@@ -195,7 +213,7 @@ export async function getMonthlyReconciliation(period: string, defaultToleranceP
     if (q.lte(0)) continue;
     let part: Awaited<ReturnType<typeof explodeBom>>;
     try {
-      part = await explodeBom(p._id, q, { defaultTolerancePercent });
+      part = await explodeBom(p._id, q, { defaultTolerancePercent, directOnly: true, includeIntermediate: true });
     } catch (e) {
       if (String((e as Error).message).startsWith("BOM_NOT_FOUND")) {
         skippedProducts.push({ id: p._id, quantity: q.toString() });
@@ -218,7 +236,7 @@ export async function getMonthlyReconciliation(period: string, defaultToleranceP
 
   const rank: Record<ReconStatus, number> = { OVER: 0, NO_NORM: 1, UNDER: 2, OK: 3 };
   let rows = items
-    .filter((it) => it.type === ITEM_TYPE.MATERIAL && !it.excludeFromReconciliation)
+    .filter((it) => !it.excludeFromReconciliation)
     .map((it) => {
       const id = String(it._id);
       const norm = need.get(id)?.norm ?? new Decimal(0);

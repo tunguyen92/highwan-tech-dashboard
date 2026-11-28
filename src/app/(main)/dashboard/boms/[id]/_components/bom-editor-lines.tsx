@@ -105,7 +105,7 @@ export function BomEditorLines({
                       items={items}
                       value={line.itemId}
                       placeholder={placeholder}
-                      allowedTypes={["MATERIAL", "SEMI"]}
+                      allowedTypes={["MATERIAL", "SEMI", "PRODUCT"]}
                       excludeIds={[
                         outputItemId,
                         ...lines

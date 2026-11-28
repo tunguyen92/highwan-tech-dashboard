@@ -13,6 +13,7 @@ import { D, decimalsOf } from "./decimal";
 const LOCKED_WHEN_REFERENCED = ["code", "type", "unit"] as const;
 
 const escapeRegex = (s: string) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+const asStocked = <T extends { isStocked: boolean }>(item: T) => ({ ...item, isStocked: true });
 
 /** True when the item appears in any voucher, ledger entry or BOM */
 export async function isItemReferenced(itemId: string | Types.ObjectId) {
@@ -39,7 +40,8 @@ function buildItemFilter(f: ItemListFilter) {
 
 export async function listItems(f: ItemListFilter) {
   const filter = buildItemFilter(f);
-  return Item.find(filter).sort({ code: 1 }).limit(1000).lean();
+  const items = await Item.find(filter).sort({ code: 1 }).limit(1000).lean();
+  return items.map(asStocked);
 }
 
 export async function listItemsPage(f: ItemListFilter & { page: number; pageSize: number }) {
@@ -52,7 +54,7 @@ export async function listItemsPage(f: ItemListFilter & { page: number; pageSize
       .lean(),
     Item.countDocuments(filter),
   ]);
-  return { rows, total, page: f.page, pageSize: f.pageSize };
+  return { rows: rows.map(asStocked), total, page: f.page, pageSize: f.pageSize };
 }
 
 export async function createItem(input: any) {

@@ -263,7 +263,6 @@ export function ItemFormDialog({
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
-                      disabled={type === "SEMI"}
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.error?.message ? <FieldError>{t(fieldState.error.message)}</FieldError> : null}
@@ -273,7 +272,7 @@ export function ItemFormDialog({
             </div>
             {type === "SEMI" ? (
               <FieldDescription>
-                {t("Semi-finished items are not stocked: they only serve as an intermediate level in a BOM.")}
+                {t("Semi-finished items are stocked and can also be used as components in another product's BOM.")}
               </FieldDescription>
             ) : (
               <FieldDescription>

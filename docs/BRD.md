@@ -128,8 +128,8 @@ Các quyết định dưới đây được chốt trong quá trình làm rõ y�
 | D1  | Chỉ 1 kho, 1 đối tác                                            | Không có danh mục kho/đối tác trên phiếu                                                       |
 | D2  | Không theo dõi giá trị, lô, hạn dùng                            | Bỏ mọi cột đơn giá, thành tiền                                                                 |
 | D3  | Nguyên liệu gồm mọi loại (linh kiện, dây điện...), một cấp      | Loại hàng chỉ có 3 giá trị: nguyên liệu, bán thành phẩm, thành phẩm                            |
-| D4  | Bán thành phẩm không lưu kho                                    | Chỉ là cấp trung gian của định mức; phiếu chỉ có nguyên liệu và thành phẩm                     |
-| D5  | Thành phẩm sản xuất xong nhập vào kho của hệ thống              | Có phiếu “Nhập thành phẩm”                                                                     |
+| D4  | Bán thành phẩm được lưu kho                                     | Có thể là đầu ra của chuyền trước và thành phần của BOM chuyền sau                              |
+| D5  | Thành phẩm sản xuất xong nhập vào kho của hệ thống              | Dùng phiếu “Nhập từ sản xuất”, đồng thời tiêu hao BOM trực tiếp                                 |
 | D6  | Không làm lệnh sản xuất (đã cân nhắc, thấy phức tạp)            | Đối chiếu định mức theo tháng; để sẵn trường “Mã đợt”                                          |
 | D7  | Không cho tồn âm                                                | Kiểm tra ngay trong lệnh cập nhật tồn                                                          |
 | D8  | Phiếu đã xác nhận được hủy                                      | Hủy bằng giao dịch đảo, ghi theo ngày hủy                                                      |

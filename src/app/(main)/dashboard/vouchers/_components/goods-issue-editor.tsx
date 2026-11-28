@@ -706,7 +706,7 @@ export function GoodsIssueEditor({ voucherId }: { voucherId: string | null }) {
         description={
           direction === "OUT"
             ? t(
-                "Stock is deducted immediately and issuing more than the stock is not allowed. Finished-product issues also deduct materials from the active BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.",
+                "Stock is deducted only for the issued items and issuing more than the stock is not allowed. Production receipts already consume their direct BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.",
               )
             : t(
                 "Stock is increased immediately. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.",

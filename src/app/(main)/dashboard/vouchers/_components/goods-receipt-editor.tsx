@@ -81,9 +81,6 @@ export function GoodsReceiptEditor({ voucherId }: { voucherId: string | null }) 
   const date = useWatch({ control: form.control, name: "date" });
   const lines = useWatch({ control: form.control, name: "lines" }) ?? [];
   const busy = form.formState.isSubmitting;
-  const types = (Object.keys(VOUCHER_RULES) as VoucherType[]).filter(
-    (voucherType) => VOUCHER_RULES[voucherType].direction === "IN",
-  );
   const rule = VOUCHER_RULES[type];
   const availableItems = items.filter((item) => item.isStocked && rule.allowed.includes(item.type));
   const itemById = new Map(items.map((item) => [item._id, item]));
@@ -96,6 +93,9 @@ export function GoodsReceiptEditor({ voucherId }: { voucherId: string | null }) 
   } = useLoad(
     () => (currentId ? unwrapAs<VoucherDTO>(getVoucherAction(currentId)) : Promise.resolve(null)),
     [currentId],
+  );
+  const types = (Object.keys(VOUCHER_RULES) as VoucherType[]).filter(
+    (voucherType) => VOUCHER_RULES[voucherType].direction === "IN",
   );
 
   useEffect(() => {

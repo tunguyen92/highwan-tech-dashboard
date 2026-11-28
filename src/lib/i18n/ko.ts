@@ -158,8 +158,8 @@ export const ko: Record<string, string> = {
   "Code, type and unit are locked once the item has vouchers, stock transactions or a BOM.":
     "전표, 재고 거래 또는 BOM이 있는 품목은 코드, 유형 및 단위를 변경할 수 없습니다.",
   "Minimum stock": "최소 재고",
-  "Semi-finished items are not stocked: they only serve as an intermediate level in a BOM.":
-    "반제품은 재고로 관리되지 않으며 BOM의 중간 단계로만 사용됩니다.",
+  "Semi-finished items are stocked and can also be used as components in another product's BOM.":
+    "반제품은 재고로 관리되며 다른 제품의 BOM 구성품으로도 사용할 수 있습니다.",
   "Only M and KG units accept fractional quantities; all other units must be whole numbers.":
     "M 및 KG 단위만 소수 수량을 허용합니다. 그 외 단위는 정수여야 합니다.",
   Group: "그룹",
@@ -168,8 +168,8 @@ export const ko: Record<string, string> = {
   "e.g. box of 20 pieces": "예: 20개들이 상자",
   "Exclude from BOM reconciliation (glue, solder, small consumables)": "BOM 대사에서 제외(접착제, 납땜 재료, 소모품)",
   "Item catalog": "품목 카탈로그",
-  "Raw materials, semi-finished and finished products. Semi-finished items are only used in BOMs and are not stocked.":
-    "원자재, 반제품 및 완제품입니다. 반제품은 BOM에서만 사용되며 재고로 관리되지 않습니다.",
+  "Raw materials, semi-finished and finished products. Semi-finished items can be stocked and used in BOMs.":
+    "원자재, 반제품 및 완제품입니다. 반제품은 재고로 관리하고 BOM에 사용할 수 있습니다.",
   "Raw material": "원자재",
   "Semi-finished": "반제품",
   "Finished product": "완제품",
@@ -216,8 +216,8 @@ export const ko: Record<string, string> = {
   "Cancelled vouchers are recorded with a reversal dated on the day of cancellation: cancelling an issue shows in the In column of that period, cancelling a receipt shows in the Out column. Closed periods therefore never change.":
     "취소된 전표는 취소일 기준으로 반대 거래가 기록됩니다. 출고 취소는 해당 기간의 입고에, 입고 취소는 출고에 표시됩니다. 따라서 마감된 기간의 수치는 변경되지 않습니다.",
   "Monthly BOM reconciliation": "월별 BOM 대사",
-  "Compares the materials actually issued to production with the requirement calculated from finished products received in the month, using the active BOMs.":
-    "활성 BOM을 기준으로 실제 생산 출고 자재와 해당 월에 입고된 완제품으로 계산한 소요량을 비교합니다.",
+  "Compares direct BOM consumption with products received from production, using the active BOMs.":
+    "활성 BOM을 기준으로 생산 입고 제품과 직접 BOM 소비를 비교합니다.",
   "Max allowed": "최대 허용량",
   "Actually issued": "실제 출고량",
   Difference: "차이",
@@ -229,10 +229,10 @@ export const ko: Record<string, string> = {
   'because they have no active BOM. Materials of these products appear as "No BOM" if they were issued.':
     '활성 BOM이 없기 때문입니다. 해당 제품의 자재가 출고되었다면 "BOM 없음"으로 표시됩니다.',
   "No data for this month.": "이번 달 데이터가 없습니다.",
-  "Requirement = (finished products received in the month, net of cancellations) * active BOM, expanded across all levels.":
-    "소요량 = (해당 월 입고 완제품 - 취소분) × 활성 BOM(모든 단계 확장)",
-  'Only "Issue to production" and "Receive finished products" vouchers count. Items marked "Not reconciled" are ignored.':
-    '"생산 출고" 및 "완제품 입고" 전표만 포함됩니다. "대사 제외"로 표시된 품목은 무시됩니다.',
+  "Requirement = (products received from production in the month, net of cancellations) * their direct active BOM.":
+    "소요량 = (해당 월 생산 입고 제품 - 취소분) × 직접 활성 BOM",
+  'Production receipts consume their direct BOM components. Sales and other issue vouchers do not consume BOM components again. Items marked "Not reconciled" are ignored.':
+    '생산 입고는 직접 BOM 구성품을 소비합니다. 판매 및 다른 출고 전표는 BOM 구성품을 다시 소비하지 않습니다. "대사 제외" 품목은 무시됩니다.',
   "Work in progress on the line at month end (materials issued but finished products not yet received) skews the figures temporarily and is made up the following month.":
     "월말 재공품(자재는 출고되었지만 완제품은 아직 입고되지 않은 상태)으로 인해 수치가 일시적으로 달라질 수 있으며 다음 달에 조정됩니다.",
   "If a BOM is changed mid-month, that month's figures are only approximate because the currently active version is used.":
@@ -259,8 +259,8 @@ export const ko: Record<string, string> = {
   "Current stock": "현재 재고",
   "Previous month stock": "전월 재고",
   Inventory: "재고",
-  "Current stock of raw materials and finished products, with alerts below the minimum level.":
-    "원자재 및 완제품의 현재 재고입니다. 최소 수준 미만인 경우 알림을 표시합니다.",
+  "Current stock of raw materials, semi-finished items and finished products, with alerts below the minimum level.":
+    "원자재, 반제품, 완제품의 현재 재고입니다. 최소 수준 미만인 경우 알림을 표시합니다.",
   "Only items below minimum": "최소 재고 미만만 표시",
   "item(s) below the minimum stock level.": "개 품목이 최소 재고 수준 미만입니다.",
   Minimum: "최소",
@@ -329,8 +329,8 @@ export const ko: Record<string, string> = {
   "Save draft": "초안 저장",
   Confirm: "확정",
   "Confirm the voucher and post to the stock ledger?": "전표를 확정하고 재고 원장에 반영하시겠습니까?",
-  "Stock is deducted immediately and issuing more than the stock is not allowed. Finished-product issues also deduct materials from the active BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
-    "재고가 즉시 차감되며 보유량보다 많이 출고할 수 없습니다. 완제품 출고 시 활성 BOM에 따라 자재도 차감됩니다. 확정된 전표는 편집할 수 없으며 잘못된 경우 취소만 가능합니다.",
+  "Stock is deducted only for the issued items and issuing more than the stock is not allowed. Production receipts already consume their direct BOM. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
+    "출고 품목만 재고에서 차감되며 보유량보다 많이 출고할 수 없습니다. 생산 입고 시 직접 BOM이 이미 소비됩니다. 확정된 전표는 편집할 수 없으며 잘못된 경우 취소만 가능합니다.",
   "Stock is increased immediately. A confirmed voucher cannot be edited; if it is wrong you can only cancel it.":
     "재고가 즉시 증가합니다. 확정된 전표는 편집할 수 없으며 잘못된 경우 취소만 가능합니다.",
   Replace: "교체",
@@ -339,10 +339,10 @@ export const ko: Record<string, string> = {
   "Cancel the confirmed voucher?": "확정된 전표를 취소하시겠습니까?",
   "The system writes reversal transactions to restore stock and keeps the history. Cancelling a receipt is blocked if the goods were already issued.":
     "시스템은 재고를 복원하는 반대 거래를 기록하고 이력을 보존합니다. 입고된 상품이 이미 출고된 경우 해당 입고를 취소할 수 없습니다.",
-  "Receive raw materials from the partner and finished products from production. A voucher only posts to the stock ledger once confirmed.":
+  "Receive raw materials from partners and finished products from production. A voucher only posts to the stock ledger once confirmed.":
     "거래처에서 원자재를 입고하고 생산에서 완제품을 입고합니다. 전표는 확정된 경우에만 재고 원장에 반영됩니다.",
-  "Issue goods. Confirming a finished-product issue also deducts its active BOM materials. Issuing more than the stock is not allowed.":
-    "상품을 출고합니다. 완제품 출고를 확정하면 활성 BOM의 자재도 차감됩니다. 재고보다 많이 출고할 수 없습니다.",
+  "Issue goods. Stock is reduced for only the explicitly issued items because production receipts already consume their direct BOM. Issuing more than the stock is not allowed.":
+    "출고 전표를 작성합니다. 생산 입고가 직접 BOM을 이미 소비하므로 출고 품목만 차감됩니다. 재고보다 많이 출고할 수 없습니다.",
   "Search by voucher number...": "전표 번호로 검색...",
   "Create voucher": "전표 만들기",
   "No vouchers yet.": "전표가 없습니다.",
@@ -394,9 +394,8 @@ export const ko: Record<string, string> = {
   "In use": "사용 중",
   Superseded: "대체됨",
   "Receive raw materials": "원자재 입고",
-  "Receive finished products": "완제품 입고",
   "Other receipt": "기타 입고",
-  "Issue to production": "생산 출고",
+  "Receive from production": "생산 입고",
   "Ship to partner": "거래처 출하",
   "Deliver for outsourcing": "외주 납품",
   "Other issue": "기타 출고",

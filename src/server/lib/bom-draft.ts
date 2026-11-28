@@ -25,7 +25,6 @@ async function buildLines(outputItemId: string, lines: LineInput[]) {
     const it = byId.get(String(l.itemId));
     if (!it) throw new Error("BOM_LINE_ITEM_NOT_FOUND");
     if (!it.isActive) throw new Error(`BOM_ITEM_INACTIVE:${it.code}`);
-    if (it.type === ITEM_TYPE.PRODUCT) throw new Error(`BOM_LINE_CANNOT_BE_PRODUCT:${it.code}`);
     const q = D(l.quantity);
     if (!isPositive(q)) throw new Error("BOM_QTY_MUST_BE_POSITIVE");
     if (decimalsOf(q) > maxQuantityDecimalPlacesForUnit(it.unit)) {

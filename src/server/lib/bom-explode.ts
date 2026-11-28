@@ -9,13 +9,17 @@ export type Need = { norm: Decimal; allowed: Decimal };
 export type ExplodeOptions = {
   /** Tolerance % applied to material lines whose scrapPercent is 0 (e.g. 2) */
   defaultTolerancePercent?: number;
+  /** Include stocked non-material components in addition to fully exploded raw materials */
+  includeIntermediate?: boolean;
+  /** Return only the direct components of the requested product */
+  directOnly?: boolean;
   session?: ClientSession;
 };
 
 const MAX_DEPTH = 20;
 
 /**
- * Explodes the ACTIVE multi-level BOM down to raw materials.
+ * Explodes the ACTIVE multi-level BOM down to raw materials, optionally retaining non-material components.
  * Returns Map<itemId, { norm, allowed }>:
  *  - norm: required quantity per the BOM (scrap not included)
  *  - allowed: maximum acceptable quantity (norm plus tolerance, compounded across levels)
@@ -26,7 +30,7 @@ export async function explodeBom(
   quantity: Decimal.Value,
   opts: ExplodeOptions = {},
 ): Promise<Map<string, Need>> {
-  const { defaultTolerancePercent = 0, session } = opts;
+  const { defaultTolerancePercent = 0, includeIntermediate = false, directOnly = false, session } = opts;
   const result = new Map<string, Need>();
   const bomCache = new Map<string, any>();
   const itemCache = new Map<string, IItem>();
@@ -67,12 +71,18 @@ export async function explodeBom(
 
       const q = mult.mul(line.quantity.toString());
       // Explicit scrap compounds through the levels; the default tolerance applies once, on the material line only
-      const isSemi = item.type === ITEM_TYPE.SEMI;
-      const tol = line.scrapPercent > 0 ? line.scrapPercent : isSemi ? 0 : defaultTolerancePercent;
+      const isNested = item.type !== ITEM_TYPE.MATERIAL;
+      const tol = line.scrapPercent > 0 ? line.scrapPercent : isNested ? 0 : defaultTolerancePercent;
       const am = allowedMult.mul(1 + tol / 100);
 
-      if (isSemi) {
-        await walk(id, q, am, [...path, itemId]);
+      if (isNested) {
+        if (includeIntermediate) {
+          const cur = result.get(id) ?? { norm: new Decimal(0), allowed: new Decimal(0) };
+          cur.norm = cur.norm.plus(q);
+          cur.allowed = cur.allowed.plus(q.mul(am));
+          result.set(id, cur);
+        }
+        if (!directOnly) await walk(id, q, am, [...path, itemId]);
       } else {
         const cur = result.get(id) ?? { norm: new Decimal(0), allowed: new Decimal(0) };
         cur.norm = cur.norm.plus(q);
@@ -131,7 +141,7 @@ export type BomTreeNode = {
   children: BomTreeNode[];
 };
 
-/** Multi-level tree of one BOM (any status). SEMI lines are expanded with their ACTIVE BOM. */
+/** Multi-level tree of one BOM (any status). Non-material lines are expanded with their ACTIVE BOM. */
 export async function getBomTree(bomId: string) {
   const root = await Bom.findById(bomId).lean();
   if (!root) throw new Error("BOM_NOT_FOUND");
@@ -162,7 +172,7 @@ export async function getBomTree(bomId: string) {
         missingBom: false,
         children: [],
       };
-      if (it?.type === ITEM_TYPE.SEMI) {
+      if (it && it.type !== ITEM_TYPE.MATERIAL) {
         if (path.includes(id)) throw new Error("BOM_CIRCULAR_REFERENCE");
         const child = await Bom.findOne({ outputItemId: id, status: BOM_STATUS.ACTIVE }).lean();
         if (child) node.children = await expand(child.lines, [...path, id]);
